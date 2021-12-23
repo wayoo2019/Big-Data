@@ -1,0 +1,968 @@
+﻿{
+  "paragraphs": [
+    {
+      "text": "%md ## Twitter Sentiment Analysis using Hive\n\nThis notebook shows how to use much of the knowledge we have gained up to this point to perform sentiment analysis on Twitter data (example from  **Hadoop Real-World Solutions Cookbook**, Second Edition by Tanmay Deshpande)\n- Load tweets from a semi-structured (JSON) source. This includes the use of several complex data types and the Json SerDe\n- Load a dictionary that can be used for sentiment analysis\n- Clean up the data and drop fields we do not need\n- Use VIEWS to make it easier to express our logic without having to create other large tables\n- Use a join to find the polarity (positive or negative) of every word in every tweet in our sample\n- Use another join to in effect add a sentiment field to the cleaned-up tweet table and store it to HDFS\n\nIf you want to run this notebook please change the `USE std099;` in each paragraph to reflect your own student id and create your own database if needed \n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:50:55+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<div class=\"markdown-body\">\n<h2>Twitter Sentiment Analysis using Hive</h2>\n<p>This notebook shows how to use much of the knowledge we have gained up to this point to perform sentiment analysis on Twitter data (example from <strong>Hadoop Real-World Solutions Cookbook</strong>, Second Edition by Tanmay Deshpande)<br/>- Load tweets from a semi-structured (JSON) source. This includes the use of several complex data types and the Json SerDe<br/>- Load a dictionary that can be used for sentiment analysis<br/>- Clean up the data and drop fields we do not need<br/>- Use VIEWS to make it easier to express our logic without having to create other large tables<br/>- Use a join to find the polarity (positive or negative) of every word in every tweet in our sample<br/>- Use another join to in effect add a sentiment field to the cleaned-up tweet table and store it to HDFS</p>\n<p>If you want to run this notebook please change the <code>USE std099;</code> in each paragraph to reflect your own student id and create your own database if needed</p>\n</div>"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655669_-1075714437",
+      "id": "20180422-010013_1281633042",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "READY",
+      "focus": true,
+      "$$hashKey": "object:254"
+    },
+    {
+      "text": "%sh\n# We have raw tweets ingested by Flume\nhdfs dfs -ls /cis442f-data/input/tweets_raw \n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:06+0000",
+      "config": {
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/sh",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Found 30 items\n-rw-rwxr-x+  1 i1 i1       6148 2021-06-03 17:19 /cis442f-data/input/tweets_raw/.DS_Store\n-rw-rwxr-x+  1 i1 i1     803323 2021-06-03 17:18 /cis442f-data/input/tweets_raw/FlumeData.1367523670393.gz\n-rw-rwxr-x+  1 i1 i1     284355 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367523670394.gz\n-rw-rwxr-x+  1 i1 i1     979408 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367524902445.gz\n-rw-rwxr-x+  1 i1 i1     935898 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367524902446.gz\n-rw-rwxr-x+  1 i1 i1     858454 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367524902447.gz\n-rw-rwxr-x+  1 i1 i1     771169 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367524902448.gz\n-rw-rwxr-x+  1 i1 i1     845241 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367528503070.gz\n-rw-rwxr-x+  1 i1 i1     895763 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367528503071.gz\n-rw-rwxr-x+  1 i1 i1     900366 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367528503072.gz\n-rw-rwxr-x+  1 i1 i1     982697 2021-06-03 17:20 /cis442f-data/input/tweets_raw/FlumeData.1367528503073.gz\n-rw-rwxr-x+  1 i1 i1    1019069 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367533385475.gz\n-rw-rwxr-x+  1 i1 i1    1007858 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367533385476.gz\n-rw-rwxr-x+  1 i1 i1     599185 2021-06-03 17:18 /cis442f-data/input/tweets_raw/FlumeData.1367533385477.gz\n-rw-rwxr-x+  1 i1 i1     177097 2021-06-03 17:20 /cis442f-data/input/tweets_raw/FlumeData.1367535703055.gz\n-rw-rwxr-x+  1 i1 i1      34024 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367535742231.gz\n-rw-rwxr-x+  1 i1 i1     933032 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367542477363.gz\n-rw-rwxr-x+  1 i1 i1    1750641 2021-06-03 17:18 /cis442f-data/input/tweets_raw/FlumeData.1367543627259.gz\n-rw-rwxr-x+  1 i1 i1    1891303 2021-06-03 17:20 /cis442f-data/input/tweets_raw/FlumeData.1367543627260.gz\n-rw-rwxr-x+  1 i1 i1    1974692 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367543627261.gz\n-rw-rwxr-x+  1 i1 i1     393718 2021-06-03 17:18 /cis442f-data/input/tweets_raw/FlumeData.1367543627262.gz\n-rw-rwxr-x+  1 i1 i1    1852542 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367546502211.gz\n-rw-rwxr-x+  1 i1 i1    2062516 2021-06-03 17:18 /cis442f-data/input/tweets_raw/FlumeData.1367546502212.gz\n-rw-rwxr-x+  1 i1 i1    1849421 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367546502213.gz\n-rw-rwxr-x+  1 i1 i1    1784494 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367546502214.gz\n-rw-rwxr-x+  1 i1 i1    1887498 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367550102716.gz\n-rw-rwxr-x+  1 i1 i1    2271609 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367550102717.gz\n-rw-rwxr-x+  1 i1 i1    2345216 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367550102718.gz\n-rw-rwxr-x+  1 i1 i1    2455759 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367550102719.gz\n-rw-rwxr-x+  1 i1 i1      21983 2021-06-03 17:19 /cis442f-data/input/tweets_raw/FlumeData.1367550102720.gz\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655669_1547589030",
+      "id": "20200401-200903_1358416001",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:255",
+      "dateFinished": "2021-06-03T17:51:09+0000",
+      "dateStarted": "2021-06-03T17:51:06+0000"
+    },
+    {
+      "text": "%sh\n# We can look at the contents of one of these files\nhdfs dfs -cat /cis442f-data/input/tweets_raw/FlumeData.1367550102720.gz | gzip -d | head -n 2 \n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:14+0000",
+      "config": {
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/sh",
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 336,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "{\"filter_level\":\"low\",\"retweeted_status\":{\"contributors\":null,\"text\":\"Lol am i really at the iron man 3  midnight premier .... #hellyeaiam\",\"geo\":null,\"retweeted\":false,\"in_reply_to_screen_name\":null,\"truncated\":false,\"lang\":\"en\",\"entities\":{\"symbols\":[],\"urls\":[],\"hashtags\":[{\"text\":\"hellyeaiam\",\"indices\":[57,68]}],\"user_mentions\":[]},\"in_reply_to_status_id_str\":null,\"id\":330165930824957952,\"source\":\"<a href=\\\"http://twitter.com/download/android\\\" rel=\\\"nofollow\\\">Twitter for Android<\\/a>\",\"in_reply_to_user_id_str\":null,\"favorited\":false,\"in_reply_to_status_id\":null,\"retweet_count\":1,\"created_at\":\"Fri May 03 03:44:26 +0000 2013\",\"in_reply_to_user_id\":null,\"favorite_count\":1,\"id_str\":\"330165930824957952\",\"place\":null,\"user\":{\"location\":\"\",\"default_profile\":true,\"statuses_count\":3187,\"profile_background_tile\":false,\"lang\":\"en\",\"profile_link_color\":\"0084B4\",\"profile_banner_url\":\"https://si0.twimg.com/profile_banners/530931069/1356981854\",\"id\":530931069,\"following\":null,\"favourites_count\":1406,\"protected\":false,\"profile_text_color\":\"333333\",\"description\":\"i tweet to please me, not you.\",\"verified\":false,\"contributors_enabled\":false,\"profile_sidebar_border_color\":\"C0DEED\",\"name\":\"sarah hatton\",\"profile_background_color\":\"C0DEED\",\"created_at\":\"Tue Mar 20 02:29:36 +0000 2012\",\"default_profile_image\":false,\"followers_count\":216,\"profile_image_url_https\":\"https://si0.twimg.com/profile_images/3047120231/3f3311c912d765a2327f9d42aba094ab_normal.jpeg\",\"geo_enabled\":true,\"profile_background_image_url\":\"http://a0.twimg.com/images/themes/theme1/bg.png\",\"profile_background_image_url_https\":\"https://si0.twimg.com/images/themes/theme1/bg.png\",\"follow_request_sent\":null,\"url\":null,\"utc_offset\":null,\"time_zone\":null,\"notifications\":null,\"profile_use_background_image\":true,\"friends_count\":240,\"profile_sidebar_fill_color\":\"DDEEF6\",\"screen_name\":\"sarahhatton13\",\"id_str\":\"530931069\",\"profile_image_url\":\"http://a0.twimg.com/profile_images/3047120231/3f3311c912d765a2327f9d42aba094ab_normal.jpeg\",\"listed_count\":1,\"is_translator\":false},\"coordinates\":null},\"contributors\":null,\"text\":\"RT @sarahhatton13: Lol am i really at the iron man 3  midnight premier .... #hellyeaiam\",\"geo\":null,\"retweeted\":false,\"in_reply_to_screen_name\":null,\"truncated\":false,\"entities\":{\"symbols\":[],\"urls\":[],\"hashtags\":[{\"text\":\"hellyeaiam\",\"indices\":[76,87]}],\"user_mentions\":[{\"id\":530931069,\"name\":\"sarah hatton\",\"indices\":[3,17],\"screen_name\":\"sarahhatton13\",\"id_str\":\"530931069\"}]},\"in_reply_to_status_id_str\":null,\"id\":330166328960884738,\"source\":\"web\",\"in_reply_to_user_id_str\":null,\"favorited\":false,\"in_reply_to_status_id\":null,\"retweet_count\":0,\"created_at\":\"Fri May 03 03:46:01 +0000 2013\",\"in_reply_to_user_id\":null,\"favorite_count\":0,\"id_str\":\"330166328960884738\",\"place\":null,\"user\":{\"location\":\"INDONESIA\",\"default_profile\":true,\"statuses_count\":40,\"profile_background_tile\":false,\"lang\":\"en\",\"profile_link_color\":\"0084B4\",\"profile_banner_url\":\"https://si0.twimg.com/profile_banners/1398474307/1367550814\",\"id\":1398474307,\"following\":null,\"favourites_count\":0,\"protected\":false,\"profile_text_color\":\"333333\",\"description\":\"seluruh pengemar iron man di indonesia silahkan follow @ironman3_ID\",\"verified\":false,\"contributors_enabled\":false,\"profile_sidebar_border_color\":\"C0DEED\",\"name\":\"IRON MAN 3\",\"profile_background_color\":\"C0DEED\",\"created_at\":\"Fri May 03 00:06:00 +0000 2013\",\"default_profile_image\":false,\"followers_count\":3,\"profile_image_url_https\":\"https://si0.twimg.com/profile_images/3606053422/8cd130ed4c34ce36880f3cf5284cfc80_normal.jpeg\",\"geo_enabled\":false,\"profile_background_image_url\":\"http://a0.twimg.com/images/themes/theme1/bg.png\",\"profile_background_image_url_https\":\"https://si0.twimg.com/images/themes/theme1/bg.png\",\"follow_request_sent\":null,\"url\":\"http://ironman3.com\",\"utc_offset\":25200,\"time_zone\":\"Bangkok\",\"notifications\":null,\"profile_use_background_image\":true,\"friends_count\":30,\"profile_sidebar_fill_color\":\"DDEEF6\",\"screen_name\":\"ironman3_ID\",\"id_str\":\"1398474307\",\"profile_image_url\":\"http://a0.twimg.com/profile_images/3606053422/8cd130ed4c34ce36880f3cf5284cfc80_normal.jpeg\",\"listed_count\":0,\"is_translator\":false},\"coordinates\":null}\n{\"filter_level\":\"low\",\"retweeted_status\":{\"contributors\":null,\"text\":\"Lol am i really at the iron man 3  midnight premier .... #hellyeaiam\",\"geo\":null,\"retweeted\":false,\"in_reply_to_screen_name\":null,\"truncated\":false,\"lang\":\"en\",\"entities\":{\"symbols\":[],\"urls\":[],\"hashtags\":[{\"text\":\"hellyeaiam\",\"indices\":[57,68]}],\"user_mentions\":[]},\"in_reply_to_status_id_str\":null,\"id\":330165930824957952,\"source\":\"<a href=\\\"http://twitter.com/download/android\\\" rel=\\\"nofollow\\\">Twitter for Android<\\/a>\",\"in_reply_to_user_id_str\":null,\"favorited\":false,\"in_reply_to_status_id\":null,\"retweet_count\":1,\"created_at\":\"Fri May 03 03:44:26 +0000 2013\",\"in_reply_to_user_id\":null,\"favorite_count\":1,\"id_str\":\"330165930824957952\",\"place\":null,\"user\":{\"location\":\"\",\"default_profile\":true,\"statuses_count\":3187,\"profile_background_tile\":false,\"lang\":\"en\",\"profile_link_color\":\"0084B4\",\"profile_banner_url\":\"https://si0.twimg.com/profile_banners/530931069/1356981854\",\"id\":530931069,\"following\":null,\"favourites_count\":1406,\"protected\":false,\"profile_text_color\":\"333333\",\"description\":\"i tweet to please me, not you.\",\"verified\":false,\"contributors_enabled\":false,\"profile_sidebar_border_color\":\"C0DEED\",\"name\":\"sarah hatton\",\"profile_background_color\":\"C0DEED\",\"created_at\":\"Tue Mar 20 02:29:36 +0000 2012\",\"default_profile_image\":false,\"followers_count\":216,\"profile_image_url_https\":\"https://si0.twimg.com/profile_images/3047120231/3f3311c912d765a2327f9d42aba094ab_normal.jpeg\",\"geo_enabled\":true,\"profile_background_image_url\":\"http://a0.twimg.com/images/themes/theme1/bg.png\",\"profile_background_image_url_https\":\"https://si0.twimg.com/images/themes/theme1/bg.png\",\"follow_request_sent\":null,\"url\":null,\"utc_offset\":null,\"time_zone\":null,\"notifications\":null,\"profile_use_background_image\":true,\"friends_count\":240,\"profile_sidebar_fill_color\":\"DDEEF6\",\"screen_name\":\"sarahhatton13\",\"id_str\":\"530931069\",\"profile_image_url\":\"http://a0.twimg.com/profile_images/3047120231/3f3311c912d765a2327f9d42aba094ab_normal.jpeg\",\"listed_count\":1,\"is_translator\":false},\"coordinates\":null},\"contributors\":null,\"text\":\"RT @sarahhatton13: Lol am i really at the iron man 3  midnight premier .... #hellyeaiam\",\"geo\":null,\"retweeted\":false,\"in_reply_to_screen_name\":null,\"truncated\":false,\"entities\":{\"symbols\":[],\"urls\":[],\"hashtags\":[{\"text\":\"hellyeaiam\",\"indices\":[76,87]}],\"user_mentions\":[{\"id\":530931069,\"name\":\"sarah hatton\",\"indices\":[3,17],\"screen_name\":\"sarahhatton13\",\"id_str\":\"530931069\"}]},\"in_reply_to_status_id_str\":null,\"id\":330166328960884738,\"source\":\"web\",\"in_reply_to_user_id_str\":null,\"favorited\":false,\"in_reply_to_status_id\":null,\"retweet_count\":0,\"created_at\":\"Fri May 03 03:46:01 +0000 2013\",\"in_reply_to_user_id\":null,\"favorite_count\":0,\"id_str\":\"330166328960884738\",\"place\":null,\"user\":{\"location\":\"INDONESIA\",\"default_profile\":true,\"statuses_count\":40,\"profile_background_tile\":false,\"lang\":\"en\",\"profile_link_color\":\"0084B4\",\"profile_banner_url\":\"https://si0.twimg.com/profile_banners/1398474307/1367550814\",\"id\":1398474307,\"following\":null,\"favourites_count\":0,\"protected\":false,\"profile_text_color\":\"333333\",\"description\":\"seluruh pengemar iron man di indonesia silahkan follow @ironman3_ID\",\"verified\":false,\"contributors_enabled\":false,\"profile_sidebar_border_color\":\"C0DEED\",\"name\":\"IRON MAN 3\",\"profile_background_color\":\"C0DEED\",\"created_at\":\"Fri May 03 00:06:00 +0000 2013\",\"default_profile_image\":false,\"followers_count\":3,\"profile_image_url_https\":\"https://si0.twimg.com/profile_images/3606053422/8cd130ed4c34ce36880f3cf5284cfc80_normal.jpeg\",\"geo_enabled\":false,\"profile_background_image_url\":\"http://a0.twimg.com/images/themes/theme1/bg.png\",\"profile_background_image_url_https\":\"https://si0.twimg.com/images/themes/theme1/bg.png\",\"follow_request_sent\":null,\"url\":\"http://ironman3.com\",\"utc_offset\":25200,\"time_zone\":\"Bangkok\",\"notifications\":null,\"profile_use_background_image\":true,\"friends_count\":30,\"profile_sidebar_fill_color\":\"DDEEF6\",\"screen_name\":\"ironman3_ID\",\"id_str\":\"1398474307\",\"profile_image_url\":\"http://a0.twimg.com/profile_images/3606053422/8cd130ed4c34ce36880f3cf5284cfc80_normal.jpeg\",\"listed_count\":0,\"is_translator\":false},\"coordinates\":null}\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655669_2126566633",
+      "id": "20200401-200948_1102889641",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:256",
+      "dateFinished": "2021-06-03T17:51:16+0000",
+      "dateStarted": "2021-06-03T17:51:14+0000"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Start with an new database\n-- Needed to include this as a student had created\n-- a stu099 database in their home directory. \nDROP DATABASE IF EXISTS stu099 CASCADE;\n\n-- Create database for use in this notebook\n-- Store it in your own hdfs directory\n-- Change the stu099 to your own account identifier\nCREATE DATABASE IF NOT EXISTS stu099\nLOCATION '/user/stu099/stu099.db';\n\n-- Make sure we are using the right database\nUSE stu099;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:29+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 6,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655669_-933740568",
+      "id": "20200401-133927_2069106601",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:257",
+      "dateFinished": "2021-06-03T17:51:30+0000",
+      "dateStarted": "2021-06-03T17:51:29+0000"
+    },
+    {
+      "text": "%jdbc(hive)\n\nDROP TABLE IF EXISTS tweets_raw;\n-- Load the tweets into a table using appropriate complext data types\n-- Note that the word \"user\" is a reserved word in Hive. See how it is mapped to other words\n-- An alternative would be to use back ticks around it e.g. `user`\nCREATE EXTERNAL TABLE tweets_raw (\n    id BIGINT,\n    created_at STRING,\n    source STRING,\n    favorited BOOLEAN,\n    retweet_count INT,\n    retweeted_status STRUCT<\n    text:STRING,\n    user_rt:STRUCT<screen_name:STRING,name:STRING>>,\n    entities STRUCT<\n        urls:ARRAY<STRUCT<expanded_url:STRING>>,\n        user_mentions:ARRAY<STRUCT<screen_name:STRING,name:STRING>>,\n        hashtags:ARRAY<STRUCT<text:STRING>>>,\n        text STRING,\n        user_struct STRUCT<\n            screen_name:STRING,\n            name:STRING,\n            friends_count:INT,\n            followers_count:INT,\n            statuses_count:INT,\n        verified:BOOLEAN,\n        utc_offset:STRING, \n        time_zone:STRING>,\n    in_reply_to_screen_name STRING\n)\nROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'\nWITH SERDEPROPERTIES ( \"mapping.user_rt\" = \"user\", \"mapping.user_struct\" = \"user\" ) \nLOCATION '/cis442f-data/input/tweets_raw'\n;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:33+0000",
+      "config": {
+        "hive": "hive",
+        "lineNumbers": true,
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655669_1365121123",
+      "id": "20180422-010057_1744372750",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:258",
+      "dateFinished": "2021-06-03T17:51:33+0000",
+      "dateStarted": "2021-06-03T17:51:33+0000"
+    },
+    {
+      "text": "%jdbc(hive)\n\nSELECT * FROM tweets_raw LIMIT 5;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:41+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {
+                    "columns": [
+                      {
+                        "name": "tweets_raw.id",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.created_at",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.source",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.favorited",
+                        "visible": true,
+                        "width": 200,
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.retweet_count",
+                        "visible": true,
+                        "width": 240,
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.retweeted_status",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.entities",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.text",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.user_struct",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      },
+                      {
+                        "name": "tweets_raw.in_reply_to_screen_name",
+                        "visible": true,
+                        "width": "*",
+                        "sort": {},
+                        "filters": [
+                          {}
+                        ],
+                        "pinned": ""
+                      }
+                    ],
+                    "scrollFocus": {},
+                    "selection": [],
+                    "grouping": {
+                      "grouping": [],
+                      "aggregations": [],
+                      "rowExpandedStates": {}
+                    },
+                    "treeView": {},
+                    "pagination": {
+                      "paginationCurrentPage": 1,
+                      "paginationPageSize": 250
+                    }
+                  },
+                  "tableColumnTypeState": {
+                    "names": {
+                      "id": "string",
+                      "created_at": "string",
+                      "source": "string",
+                      "favorited": "string",
+                      "retweet_count": "string",
+                      "retweeted_status": "string",
+                      "entities": "string",
+                      "text": "string",
+                      "user_struct": "string",
+                      "in_reply_to_screen_name": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "tweets_raw.id": "string",
+                      "tweets_raw.created_at": "string",
+                      "tweets_raw.source": "string",
+                      "tweets_raw.favorited": "string",
+                      "tweets_raw.retweet_count": "string",
+                      "tweets_raw.retweeted_status": "string",
+                      "tweets_raw.entities": "string",
+                      "tweets_raw.text": "string",
+                      "tweets_raw.user_struct": "string",
+                      "tweets_raw.in_reply_to_screen_name": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "id\tcreated_at\tsource\tfavorited\tretweet_count\tretweeted_status\tentities\ttext\tuser_struct\tin_reply_to_screen_name\n330043883738234880\tThu May 02 19:39:28 +0000 2013\t<a href=\"http://twitterfeed.com\" rel=\"nofollow\">twitterfeed</a>\tfalse\t0\tnull\t{\"urls\":[{\"expanded_url\":\"http://bit.ly/132JAYp\"}],\"user_mentions\":[],\"hashtags\":[]}\t'Iron Man 3' Crushes Opening Day Records In China:  Iron Man 3 has continued its record-breaking run at the... http://t.co/9CwF31E8Ez\t{\"screen_name\":\"heidi____Klum\",\"name\":\"Heidi Klum\",\"friends_count\":353,\"followers_count\":933,\"statuses_count\":18272,\"verified\":false,\"utc_offset\":null,\"time_zone\":null}\tnull\n330043886577799169\tThu May 02 19:39:29 +0000 2013\tweb\tfalse\t0\tnull\t{\"urls\":[],\"user_mentions\":[],\"hashtags\":[]}\tIron Man 3 tonight! Woo :)\t{\"screen_name\":\"HayleeWasHere\",\"name\":\"Haylee Bonifazi\",\"friends_count\":53,\"followers_count\":35,\"statuses_count\":176,\"verified\":false,\"utc_offset\":\"-18000\",\"time_zone\":\"Eastern Time (US & Canada)\"}\tnull\n330043887055937536\tThu May 02 19:39:29 +0000 2013\t<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>\tfalse\t0\tnull\t{\"urls\":[],\"user_mentions\":[],\"hashtags\":[]}\tPreciso ver Iron Man 3 todos comentando e eu boiando kk\t{\"screen_name\":\"FePBR\",\"name\":\"Felipy\",\"friends_count\":276,\"followers_count\":235,\"statuses_count\":6035,\"verified\":false,\"utc_offset\":\"-14400\",\"time_zone\":\"Santiago\"}\tnull\n330043888788197376\tThu May 02 19:39:29 +0000 2013\t<a href=\"http://twitterfeed.com\" rel=\"nofollow\">twitterfeed</a>\tfalse\t0\tnull\t{\"urls\":[{\"expanded_url\":\"http://adf.ly/OGkT9\"}],\"user_mentions\":[],\"hashtags\":[]}\t'Iron Man 3' Crushes Opening Day Records In China:  Iron Man 3 has continued its record-breaking run at the... http://t.co/sAX3MsJjlE\t{\"screen_name\":\"johnerickjose1\",\"name\":\"john erick jose\",\"friends_count\":1943,\"followers_count\":577,\"statuses_count\":30024,\"verified\":false,\"utc_offset\":null,\"time_zone\":null}\tnull\n330043889589288960\tThu May 02 19:39:29 +0000 2013\t<a href=\"http://twitter.com/download/android\" rel=\"nofollow\">Twitter for Android</a>\tfalse\t0\tnull\t{\"urls\":[],\"user_mentions\":[],\"hashtags\":[]}\tIron man 3 was awesome =)\t{\"screen_name\":\"vixoakleophill\",\"name\":\"vicki phillips \",\"friends_count\":1059,\"followers_count\":149,\"statuses_count\":1345,\"verified\":false,\"utc_offset\":\"0\",\"time_zone\":\"Casablanca\"}\tnull\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655669_402093991",
+      "id": "20180422-013611_1080788501",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:259",
+      "dateFinished": "2021-06-03T17:51:41+0000",
+      "dateStarted": "2021-06-03T17:51:40+0000"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:50:55+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-2023276704",
+      "id": "20180422-023335_1617301239",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "READY",
+      "$$hashKey": "object:260"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Load dictionary and time zone tables. \n-- The dictionary will be used to determine whether a word \n-- is positive or negative (polarity field)\n\nDROP TABLE IF EXISTS dictionary;\nCREATE EXTERNAL TABLE dictionary (\n    type string,\n    length int,\n    word string,\n    pos string,\n    stemmed string,\n    polarity string)\nROW FORMAT DELIMITED FIELDS TERMINATED BY '\\t' \nLINES TERMINATED BY '\\n' -- needed with tab delimited data with in Zeppelin\nSTORED AS TEXTFILE\nLOCATION '/cis442f-data/input/dictionary';\n\nDROP TABLE IF EXISTS time_zone_map;\nCREATE EXTERNAL TABLE time_zone_map (\n    time_zone string,\n    country string,\n    notes string)\nROW FORMAT DELIMITED FIELDS TERMINATED BY '\\t'\nLINES TERMINATED BY '\\n'\nSTORED AS TEXTFILE\nLOCATION '/cis442f-data/input/time_zone_map';",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:47+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 6,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-1988695700",
+      "id": "20180422-013652_128338526",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:261",
+      "dateFinished": "2021-06-03T17:51:47+0000",
+      "dateStarted": "2021-06-03T17:51:47+0000"
+    },
+    {
+      "text": "%jdbc(hive)\n-- We select just a few fields including the text column from\n-- the tweets_raw table and then clean it the data\n\nDROP VIEW IF EXISTS tweets_simple;\nCREATE VIEW tweets_simple AS\nSELECT\n    id,\n    cast ( from_unixtime( unix_timestamp(concat( '2013 ', substring(created_at,5,15)), \n                                                'yyyy MMM ddhh:mm:ss')) as timestamp) ts,\n    text,\n    user_struct.time_zone\nFROM tweets_raw;\n\nDROP VIEW IF EXISTS tweets_clean;\nCREATE VIEW tweets_clean AS\nSELECT\n    id,\n    ts,\n    text,\n    m.country\n FROM tweets_simple t LEFT OUTER JOIN time_zone_map m ON t.time_zone = m.time_zone;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:50+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 6,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-372885481",
+      "id": "20180422-013851_1983196887",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:262",
+      "dateFinished": "2021-06-03T17:51:50+0000",
+      "dateStarted": "2021-06-03T17:51:50+0000"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:50:55+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-1592730862",
+      "id": "20180422-023442_200345931",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "READY",
+      "$$hashKey": "object:263"
+    },
+    {
+      "text": "%jdbc(hive)\n\n-- Note the use of VIEWS to express the logic we need and the use of\n-- functions for working with text and complex types\n-- dummy is a table alias \n-- (see: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+LateralView)\nDROP VIEW IF EXISTS l1;\ncreate view l1 as \n    select id, words\n    from tweets_raw \n    lateral view explode(sentences(lower(text))) dummy as words;\n\nDROP VIEW IF EXISTS l2;\ncreate view l2 as \n    select id, word \n    from l1 lateral view explode( words ) dummy as word ;\n\n\n-- This is the join of all the words in all the tweets \n-- with the dictionary to find the polarity of the words\nDROP VIEW IF EXISTS l3;\ncreate view l3 as select \n    id, \n    l2.word, \n    case d.polarity\n        when 'negative' then -1\n        when 'positive' then 1 \n        else 0 end as polarity \nfrom l2 left outer join dictionary d on l2.word = d.word;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:56+0000",
+      "config": {
+        "hive": "hive",
+        "lineNumbers": true,
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 6,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-964604740",
+      "id": "20180422-013852_1627628787",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:264",
+      "dateFinished": "2021-06-03T17:51:56+0000",
+      "dateStarted": "2021-06-03T17:51:56+0000"
+    },
+    {
+      "text": "%jdbc(hive)\n\n-- Summarize the combined polarity of all the words in each tweet\nCREATE TABLE tweets_sentiment \nSTORED AS RCFILE\nAS\n    select \n    id, \n    case\n        when sum( polarity ) > 0 then 'positive' \n        when sum( polarity ) < 0 then 'negative'  \n        else 'neutral' end as sentiment \n    from l3 group by id;\n\n-- Create a new table with all the tweet fields and the sentiment score\n-- Store in a binary file on HDFS (could be used for further analysis)\nCREATE TABLE tweets_senti\nSTORED AS RCFILE\nAS\n    SELECT \n        t.*,\n        case s.sentiment\n        when 'positive' then 2 \n        when 'neutral' then 1 \n        when 'negative' then 0 \n    end as sentiment  \n    FROM tweets_clean t LEFT OUTER JOIN tweets_sentiment s on t.id = s.id;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:51:58+0000",
+      "config": {
+        "hive": "hive",
+        "lineNumbers": true,
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 6,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_1990203806",
+      "id": "20180422-021429_1722311807",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:265",
+      "dateFinished": "2021-06-03T17:52:27+0000",
+      "dateStarted": "2021-06-03T17:51:58+0000"
+    },
+    {
+      "text": "%md\nThe elements we have shown here would more typically be included in one script file. It could be run periodically to process incoming tweets, e.g. every hour. The SELECT statement for the `tweets_simple` `VIEW` could be refined to only look at the last hour of tweets. Suitable partitioning of `tweets_raw` on the cluster would ensure that the script would not have to process lots of unnecessary information. ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:50:55+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<div class=\"markdown-body\">\n<p>The elements we have shown here would more typically be included in one script file. It could be run periodically to process incoming tweets, e.g. every hour. The SELECT statement for the <code>tweets_simple</code> <code>VIEW</code> could be refined to only look at the last hour of tweets. Suitable partitioning of <code>tweets_raw</code> on the cluster would ensure that the script would not have to process lots of unnecessary information.</p>\n</div>"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-1600635247",
+      "id": "20180422-023508_1335428356",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "READY",
+      "$$hashKey": "object:266"
+    },
+    {
+      "text": "%jdbc(hive)\n-- We can see that there could be refinements e.g. use different dictionaries for different languages\n\nSELECT * FROM tweets_senti LIMIT 20;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:53:31+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "id": "string",
+                      "ts": "string",
+                      "text": "string",
+                      "country": "string",
+                      "sentiment": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "tweets_senti.id": "string",
+                      "tweets_senti.ts": "string",
+                      "tweets_senti.text": "string",
+                      "tweets_senti.country": "string",
+                      "tweets_senti.sentiment": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "id\tts\ttext\tcountry\tsentiment\n330135142364508162\t2013-05-03 01:42:06.0\tGak tau da :| \"@IdahAidha: @tiobarkah @lailyMayasari @DNFadiah @ayuue_puttu @dinokrnwn @arlandosy @Joemicore iron man 3 smpai tanggl brp ??\"\tINDONESIA\t1\n330135144155455490\t2013-05-03 01:42:06.0\t@MBorrowdale iron man 3 with my man! #firstlook #ironman3 #sopumped\tnull\t1\n330135144256139265\t2013-05-03 01:42:06.0\tCan't wait to see this iron man 3 tho\tnull\t1\n330135148312010752\t2013-05-03 01:42:07.0\tsomeone go to iron man 3 w/ me\tUNITED STATES\t1\n330135148504969217\t2013-05-03 01:42:07.0\tbouta wait in line to watch iron man 3!\tUNITED STATES\t1\n330135148622381056\t2013-05-03 01:42:07.0\t\"@latercera: \"Iron man 3\" consigue 345.000 espectadores en su primera semana en Chile http://t.co/yJYTxHOtol\" // Buenísimaaaaa!! \\m/\tCHILE\t1\n330135149599670273\t2013-05-03 01:42:07.0\tRT @HowardStern: How has Ralph seen \"Iron Man 3\" twice before I've seen it once??\tUNITED STATES\t1\n330135149809385474\t2013-05-03 01:42:07.0\tIron Man 3 #soexcited!\tUNITED STATES\t1\n330135150002311171\t2013-05-03 01:42:08.0\tI asked mrs. chester is she wanted to go watch Iron Man 3 with me tomorrow cx\tUNITED STATES\t1\n330135150614704128\t2013-05-03 01:42:08.0\tWatchin iron man 3 with the fellas!! LEGGOOOOOO\tUNITED STATES\t1\n330135151222865920\t2013-05-03 01:42:08.0\tIron Man 3 - behind the scenes: http://t.co/lSg3qEsVFi via @youtube\tCANADA\t1\n330135151898132480\t2013-05-03 01:42:08.0\tRT @2bringHimglory: I am extremely excited for Iron Man 3, but I would rather see #PrayForAva trending 1,000,000,000 times more then Iron M…\tUNITED STATES\t1\n330135152028164096\t2013-05-03 01:42:08.0\tBoutta see iron man 3\tECUADOR\t1\n330135152741191680\t2013-05-03 01:42:08.0\tNow I'm going to see iron man 3 just to watch the teaser trailer for the hunger games\tUNITED STATES\t2\n330135152619556864\t2013-05-03 01:42:08.0\tIron man 3!!!!!!!!! :D so excited\tUNITED STATES\t2\n330135152867020800\t2013-05-03 01:42:08.0\tya viste iron man 3? (@elMandiloon live on http://t.co/RAIWywQDuG)\tMEXICO\t2\n330135153219338240\t2013-05-03 01:42:08.0\tIron man 3\tECUADOR\t1\n330135154582503425\t2013-05-03 01:42:09.0\tOMG... It just sank in that Iron Man 3 comes out tomorrow. Someone come see it with me! :)\tnull\t2\n330135154934820864\t2013-05-03 01:42:09.0\tI want to go see iron man 3 but I highly doubt anyone would take me cause my brother and Ashley already got tickets\tUNITED STATES\t0\n330135154834161664\t2013-05-03 01:42:09.0\tReady for Iron Man 3!\tUNITED STATES\t2\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-1200271220",
+      "id": "20180422-013852_337130412",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:267",
+      "dateFinished": "2021-06-03T17:53:31+0000",
+      "dateStarted": "2021-06-03T17:53:31+0000"
+    },
+    {
+      "text": "%jdbc(hive)\n-- We can see the execution used by Hive using EXPLAIN\nEXPLAIN create table tweets_sentiment stored as RCFILE as select \nid, \ncase\n    when sum( polarity ) > 0 then 'positive' \n    when sum( polarity ) < 0 then 'negative'  \n    else 'neutral' end as sentiment \nfrom l3 group by id;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:53:40+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 412,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Explain\nPlan not optimized by CBO.\n\nVertex dependency in root stage\nMap 1 <- Map 3 (BROADCAST_EDGE)\nReducer 2 <- Map 1 (SIMPLE_EDGE)\n\nStage-3\n  Stats Work{}\n    Stage-4\n      Create Table Operator:\n        name:stu099.tweets_sentiment\n        Stage-2\n          Dependency Collection{}\n            Stage-1\n              Reducer 2 vectorized\n              File Output Operator [FS_31]\n                table:{\"name:\":\"stu099.tweets_sentiment\"}\n                Select Operator [SEL_30] (rows=68934 width=182)\n                  Output:[\"_col0\",\"_col1\"]\n                  Group By Operator [GBY_29] (rows=68934 width=182)\n                    Output:[\"_col0\",\"_col1\"],aggregations:[\"sum(VALUE._col0)\"],keys:KEY._col0\n                  <-Map 1 [SIMPLE_EDGE]\n                    SHUFFLE [RS_20]\n                      PartitionCols:_col0\n                      Group By Operator [GBY_19] (rows=137869 width=182)\n                        Output:[\"_col0\",\"_col1\"],aggregations:[\"sum(_col2)\"],keys:_col0\n                        Select Operator [SEL_17] (rows=137869 width=182)\n                          Output:[\"_col0\",\"_col2\"]\n                          Map Join Operator [MAPJOIN_26] (rows=137869 width=182)\n                            Conds:SEL_12._col1=RS_28.word(Left Outer),Output:[\"_col0\",\"_col7\"]\n                          <-Map 3 [BROADCAST_EDGE] vectorized\n                            BROADCAST [RS_28]\n                              PartitionCols:word\n                              TableScan [TS_13] (rows=4490 width=349)\n                                stu099@dictionary,d,Tbl:COMPLETE,Col:NONE,Output:[\"word\",\"polarity\"]\n                          <-Select Operator [SEL_12] (rows=125336 width=182)\n                              Output:[\"_col0\",\"_col1\"]\n                              Lateral View Join Operator [LVJ_11] (rows=125336 width=182)\n                                Output:[\"_col0\",\"_col2\"]\n                                UDTF Operator [UDTF_10] (rows=62668 width=182)\n                                  function name:explode\n                                  Select Operator [SEL_9] (rows=62668 width=182)\n                                    Output:[\"_col0\"]\n                                    Lateral View Forward [LVF_7] (rows=62668 width=182)\n                                      Select Operator [SEL_6] (rows=62668 width=182)\n                                        Output:[\"_col0\",\"_col1\"]\n                                        Lateral View Join Operator [LVJ_5] (rows=62668 width=182)\n                                          Output:[\"_col0\",\"_col13\"]\n                                          UDTF Operator [UDTF_4] (rows=31334 width=182)\n                                            function name:explode\n                                            Select Operator [SEL_3] (rows=31334 width=182)\n                                              Output:[\"_col0\"]\n                                              Lateral View Forward [LVF_1] (rows=31334 width=182)\n                                                TableScan [TS_0] (rows=31334 width=182)\n                                                  stu099@tweets_raw,tweets_raw,Tbl:COMPLETE,Col:NONE,Output:[\"id\",\"text\"]\n        Stage-0\n          Move Operator\n             Please refer to the previous Stage-1\n\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_-409650372",
+      "id": "20180422-013852_1504209992",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:268",
+      "dateFinished": "2021-06-03T17:53:40+0000",
+      "dateStarted": "2021-06-03T17:53:40+0000"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-03T17:50:55+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622742655670_637859579",
+      "id": "20180422-211513_810347344",
+      "dateCreated": "2021-06-03T17:50:55+0000",
+      "status": "READY",
+      "$$hashKey": "object:269"
+    }
+  ],
+  "name": "Twitter Sentiment Analysis using Hive",
+  "id": "2G7E77UQW",
+  "defaultInterpreterGroup": "spark",
+  "version": "0.9.0-preview1",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {},
+  "path": "/stu099/Twitter Sentiment Analysis using Hive"
+}

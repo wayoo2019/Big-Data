@@ -1,0 +1,4902 @@
+﻿{
+  "paragraphs": [
+    {
+      "text": "%md\n### Relational Data Analysis and Complex Data Types in Hive\n\nIn this notebook we practice relational data analysis and learn about the complex datatypes in Hive. This notebook is based on material supplied by Cloudera under their Cloudera Academic Partner program and the *Programming Hive* book by Edward Capriolo, Dean Wampler, and Jason Rutherglen. You can find out more about Hive here: [https://hive.apache.org/](https://hive.apache.org/)\n\n### Topics\n- How to join data from different datasets\n- How to use many of Hive's built-in functions\n- How to group rows to aggregate data\n- Using complex data types\n\n### Joins\n- Hive supports \n-- Inner Joins\n-- Outer Joins (left, right, full)\n-- Cross joins\n-- Left semi-joins\n\n- Hive only supports equality conditions in joins in versions before 2.2 (we are using version 3.1.2)\n-- Valid: `customers.cust_id = orders.cust_id` in all versions\n-- Invalid: `customers.cust_id <> orders.cust_id`in versions of Hive before 2.2\n\n**Performance tip:** List largest table last in your query (speed gains from having small table loaded in memory and larger table streamed over it)",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:00:26+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/text",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h3>Relational Data Analysis and Complex Data Types in Hive</h3>\n<p>In this notebook we practice relational data analysis and learn about the complex datatypes in Hive. This notebook is based on material supplied by Cloudera under their Cloudera Academic Partner program and the <em>Programming Hive</em> book by Edward Capriolo, Dean Wampler, and Jason Rutherglen. You can find out more about Hive here: <a href=\"https://hive.apache.org/\">https://hive.apache.org/</a></p>\n<h3>Topics</h3>\n<ul>\n<li>How to join data from different datasets</li>\n<li>How to use many of Hive's built-in functions</li>\n<li>How to group rows to aggregate data</li>\n<li>Using complex data types</li>\n</ul>\n<h3>Joins</h3>\n<ul>\n<li><p>Hive supports\n<br  />&ndash; Inner Joins\n<br  />&ndash; Outer Joins (left, right, full)\n<br  />&ndash; Cross joins\n<br  />&ndash; Left semi-joins</p>\n</li>\n<li><p>Hive only supports equality conditions in joins in versions before 2.2 (we are using version 3.1.2)\n<br  />&ndash; Valid: <code>customers.cust_id = orders.cust_id</code> in all versions\n<br  />&ndash; Invalid: <code>customers.cust_id &lt;&gt; orders.cust_id</code>in versions of Hive before 2.2</p>\n</li>\n</ul>\n<p><strong>Performance tip:</strong> List largest table last in your query (speed gains from having small table loaded in memory and larger table streamed over it)</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_-1761822019",
+      "id": "20180417-003200_28581907",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T21:00:26+0000",
+      "dateFinished": "2021-06-01T21:00:26+0000",
+      "status": "FINISHED",
+      "focus": true,
+      "$$hashKey": "object:21340"
+    },
+    {
+      "text": "%sh\nhive --version\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:56:24+0000",
+      "config": {
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/sh",
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 84,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Hive 3.1.2-amzn-3\nGit file:///codebuild/output/src066466793/src/build/hive/rpm/BUILD/apache-hive-3.1.2-amzn-3-src -r Unknown\nCompiled by release on Tue Nov 3 23:43:08 UTC 2020\nFrom source with checksum 13c5f0ec997ac52ebbbd063437b70b84\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_123556253",
+      "id": "20190416-194244_138570492",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:56:24+0000",
+      "dateFinished": "2021-06-01T20:56:34+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21341"
+    },
+    {
+      "text": "%jdbc(hive)\nDESCRIBE FORMATTED examples.orders;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:56:34+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 184,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "col_name": "string",
+                      "data_type": "string",
+                      "comment": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "col_name\tdata_type\tcomment\n# col_name\tdata_type\tcomment\norder_id\tstring\t\ncust_id\tstring\t\ntotal\tint\t\n\tnull\tnull\n# Detailed Table Information\tnull\tnull\nDatabase:           \texamples            \tnull\nOwnerType:          \tUSER                \tnull\nOwner:              \tstu099              \tnull\nCreateTime:         \tTue Jun 01 20:31:30 UTC 2021\tnull\nLastAccessTime:     \tUNKNOWN             \tnull\nRetention:          \t0                   \tnull\nLocation:           \thdfs://ip-172-31-46-204.ec2.internal:8020/cis442f-data/input/examples8/orders\tnull\nTable Type:         \tEXTERNAL_TABLE      \tnull\nTable Parameters:\tnull\tnull\n\tEXTERNAL            \tTRUE                \n\tbucketing_version   \t2                   \n\tnumFiles            \t1                   \n\ttotalSize           \t44                  \n\ttransient_lastDdlTime\t1622579490          \n\tnull\tnull\n# Storage Information\tnull\tnull\nSerDe Library:      \torg.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe\tnull\nInputFormat:        \torg.apache.hadoop.mapred.TextInputFormat\tnull\nOutputFormat:       \torg.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat\tnull\nCompressed:         \tNo                  \tnull\nNum Buckets:        \t-1                  \tnull\nBucket Columns:     \t[]                  \tnull\nSort Columns:       \t[]                  \tnull\nStorage Desc Params:\tnull\tnull\n\tfield.delim         \t,                   \n\tserialization.format\t,                   \n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_481334636",
+      "id": "20180418-164211_1742558308",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:56:34+0000",
+      "dateFinished": "2021-06-01T20:56:36+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21342"
+    },
+    {
+      "text": "%md\n\n### Inner Join\n\n![Inner](https://cis442f-open-data.s3.amazonaws.com/pictures/hinner.png \"Inner\")\n\nNotice: that Dieter has not placed an order. So, he does not appear in the inner join result. Neither does the total from order_id = 5 with customer_id = 'z' since customer_id = 'z' is not in the customers table",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:56:36+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h3>Inner Join</h3>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hinner.png\" alt=\"Inner\" title=\"Inner\" /></p>\n<p>Notice: that Dieter has not placed an order. So, he does not appear in the inner join result. Neither does the total from order_id = 5 with customer_id = 'z' since customer_id = 'z' is not in the customers table</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_1808457437",
+      "id": "20180417-125831_2003252894",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:56:36+0000",
+      "dateFinished": "2021-06-01T20:56:36+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21343"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers c\n        JOIN orders o \n        ON (c.cust_id = o.cust_id);\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:00:53+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 176,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\nb\tBob\t1456\nc\tCarlos\t1871\na\tAlice\t1539\na\tAlice\t6352\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_266407572",
+      "id": "20180417-020702_1220800476",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:56:36+0000",
+      "dateFinished": "2021-06-01T20:59:21+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21344"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:21+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_-512223092",
+      "id": "20180417-140821_329674599",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21345"
+    },
+    {
+      "text": "%md\n**Hive supports**\n- **Implicit joins** that define join criteria in the WHERE clause\n- **Self joins** in which a table is joined to itself (useful for hierarchies)\n\nHowever, joins using the `JOIN...USING` structure are not supported",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:21+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><strong>Hive supports</strong></p>\n<ul>\n<li><strong>Implicit joins</strong> that define join criteria in the WHERE clause</li>\n<li><strong>Self joins</strong> in which a table is joined to itself (useful for hierarchies)</li>\n</ul>\n<p>However, joins using the <code>JOIN...USING</code> structure are not supported</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959128_8130231",
+      "id": "20180417-131547_1001766011",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:21+0000",
+      "dateFinished": "2021-06-01T20:59:21+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21346"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Implicit Join (i.e. not using JOIN keyword) but not best practice\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers c, orders o \n    WHERE (c.cust_id = o.cust_id);",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 184,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\nb\tBob\t1456\nc\tCarlos\t1871\na\tAlice\t1539\na\tAlice\t6352\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-1694220135",
+      "id": "20180417-131539_1050915477",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:21+0000",
+      "dateFinished": "2021-06-01T20:59:23+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21347"
+    },
+    {
+      "text": "%md\n\n####**Left Outer Join**\n\n![LeftOuter](https://cis442f-open-data.s3.amazonaws.com/pictures/hlouter.png \"LeftOuter\")\n\nThe results include the unmatched customer (Dieter) from the left table (customer). So, we are asking for all customers whether they have ordered anything or not.",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:23+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Left Outer Join</strong></h4>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hlouter.png\" alt=\"LeftOuter\" title=\"LeftOuter\" /></p>\n<p>The results include the unmatched customer (Dieter) from the left table (customer). So, we are asking for all customers whether they have ordered anything or not.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-557709537",
+      "id": "20180417-123534_584244727",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:23+0000",
+      "dateFinished": "2021-06-01T20:59:23+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21348"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers c\n        LEFT OUTER JOIN orders o \n        ON (c.cust_id = o.cust_id)\n        ORDER BY c.cust_id;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:59+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 206,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\na\tAlice\t1539\na\tAlice\t6352\nb\tBob\t1456\nc\tCarlos\t1871\nd\tDeiter\tnull\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_1947103138",
+      "id": "20180417-003827_185858370",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:23+0000",
+      "dateFinished": "2021-06-01T20:59:25+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21349"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:25+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_310034404",
+      "id": "20200329-000538_1250567205",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21350"
+    },
+    {
+      "text": "%md\n####**Right Outer Join**\n\n![RightOuter](https://cis442f-open-data.s3.amazonaws.com/pictures/hrouter.png \"RightOuter\")\n\nThe results include the total from the unmatched record from the right (orders) table",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:25+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Right Outer Join</strong></h4>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hrouter.png\" alt=\"RightOuter\" title=\"RightOuter\" /></p>\n<p>The results include the total from the unmatched record from the right (orders) table</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-1401822372",
+      "id": "20180417-123659_890722852",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:25+0000",
+      "dateFinished": "2021-06-01T20:59:25+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21351"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers c\n        RIGHT OUTER JOIN orders o \n        ON (c.cust_id = o.cust_id)\n        ORDER BY c.cust_id;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:01:46+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 242,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\nnull\tnull\t2137\na\tAlice\t1539\na\tAlice\t6352\nb\tBob\t1456\nc\tCarlos\t1871\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_1090849617",
+      "id": "20180417-132858_1518413077",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:25+0000",
+      "dateFinished": "2021-06-01T20:59:26+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21352"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_2059874413",
+      "id": "20180417-133032_1563307583",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21353"
+    },
+    {
+      "text": "%md\n####**Full Outer Join**\n\n![FullOuter](https://cis442f-open-data.s3.amazonaws.com/pictures/hfouter.png \"FullOuter\")\n\nNotice that the unmatched records from both tables are included in the output",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:26+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Full Outer Join</strong></h4>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hfouter.png\" alt=\"FullOuter\" title=\"FullOuter\" /></p>\n<p>Notice that the unmatched records from both tables are included in the output</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_2047977963",
+      "id": "20180417-124525_1041438413",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:26+0000",
+      "dateFinished": "2021-06-01T20:59:26+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21354"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers c\n        FULL OUTER JOIN orders o \n        ON (c.cust_id = o.cust_id);\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:00:00+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 238,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\nc\tCarlos\t1871\nb\tBob\t1456\nd\tDeiter\tnull\na\tAlice\t6352\na\tAlice\t1539\nnull\tnull\t2137\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-427600425",
+      "id": "20180417-003828_1759665646",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:26+0000",
+      "dateFinished": "2021-06-01T20:59:27+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21355"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:27+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_2069825658",
+      "id": "20180417-133140_1086940571",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21356"
+    },
+    {
+      "text": "%md\nAn outer join can also be used to find just the unmatched entities\n\n![Unmat](https://cis442f-open-data.s3.amazonaws.com/pictures/hunmat.png \"Unmat\")\n\nThis can be useful in Hive because it does not enforce referrential integrity. Finding the unmatched records might well be part of you efforts at cleaning up the data before analysis.",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:27+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p>An outer join can also be used to find just the unmatched entities</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hunmat.png\" alt=\"Unmat\" title=\"Unmat\" /></p>\n<p>This can be useful in Hive because it does not enforce referrential integrity. Finding the unmatched records might well be part of you efforts at cleaning up the data before analysis.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_1345131313",
+      "id": "20180417-124530_1961664458",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:27+0000",
+      "dateFinished": "2021-06-01T20:59:27+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21357"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers c\n        FULL OUTER JOIN orders o \n        ON (c.cust_id = o.cust_id)\n    WHERE c.cust_id IS NULL OR o.total IS NULL;\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:02:38+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 204,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\nd\tDeiter\tnull\nnull\tnull\t2137\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_1950881641",
+      "id": "20180417-003828_835175180",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:27+0000",
+      "dateFinished": "2021-06-01T20:59:29+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21358"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:29+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-232245488",
+      "id": "20180417-133400_450997673",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21359"
+    },
+    {
+      "text": "%md\n![NULLKey](https://cis442f-open-data.s3.amazonaws.com/pictures/hnullkey.png \"NULLKey\")\n\nThe normal rules in joins do not consider `NULL` values to be equal one another. This makes sense in most cases as `NULL` means that the value is unknown.",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:29+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hnullkey.png\" alt=\"NULLKey\" title=\"NULLKey\" /></p>\n<p>The normal rules in joins do not consider <code>NULL</code> values to be equal one another. This makes sense in most cases as <code>NULL</code> means that the value is unknown.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_1624367962",
+      "id": "20180417-124536_1305551268",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:29+0000",
+      "dateFinished": "2021-06-01T20:59:29+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21360"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers_with_null c\n        JOIN orders_with_null o \n        ON (c.cust_id = o.cust_id)\n        ORDER BY c.cust_id;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:03:08+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 212,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\na\tAlice\t1539\na\tAlice\t6352\nb\tBob\t1456\nc\tCarlos\t1871\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-656646836",
+      "id": "20180417-003828_1070254209",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:29+0000",
+      "dateFinished": "2021-06-01T20:59:30+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21361"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:30+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_1549164494",
+      "id": "20180417-150636_62835972",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21362"
+    },
+    {
+      "text": "%md\n![NULLSafe](https://cis442f-open-data.s3.amazonaws.com/pictures/hnullsafe.png \"NULLSafe\")\n\nIf there is a specific instance where you need to consider 'NULL' to be equal to 'NULL' you can use the Null Safe Equality operator `<=>`",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:30+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hnullsafe.png\" alt=\"NULLSafe\" title=\"NULLSafe\" /></p>\n<p>If there is a specific instance where you need to consider 'NULL' to be equal to 'NULL' you can use the Null Safe Equality operator <code>&lt;=&gt;</code></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-1431915317",
+      "id": "20180417-124547_1879953779",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:30+0000",
+      "dateFinished": "2021-06-01T20:59:30+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21363"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id, name, total\n    FROM customers_with_null c\n        JOIN orders_with_null o \n        ON (c.cust_id <=> o.cust_id)\n        ORDER BY c.cust_id;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:03:55+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 272,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string",
+                      "name": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\tname\ttotal\nnull\tUnknown\t1789\na\tAlice\t1539\na\tAlice\t6352\nb\tBob\t1456\nc\tCarlos\t1871\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_47448733",
+      "id": "20180417-145257_987968986",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:31+0000",
+      "dateFinished": "2021-06-01T20:59:32+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21364"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:32+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_518253738",
+      "id": "20180417-003828_1560423224",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21365"
+    },
+    {
+      "text": "%md\n![Cross](https://cis442f-open-data.s3.amazonaws.com/pictures/hcross.png \"CROSS\")\n\nOur cluster is configured to a 'strict' mode in which `CROSS` joins are not allowed for safety reasons.",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:32+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hcross.png\" alt=\"Cross\" title=\"CROSS\" /></p>\n<p>Our cluster is configured to a 'strict' mode in which <code>CROSS</code> joins are not allowed for safety reasons.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_907440532",
+      "id": "20180417-124551_475898025",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:32+0000",
+      "dateFinished": "2021-06-01T20:59:32+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21366"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:32+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959129_-846192672",
+      "id": "20180417-154709_2129257872",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21367"
+    },
+    {
+      "text": "%md \n#### **Left Semi-Joins**\n\nThe `LEFT SEMI JOIN` is a special (and efficient) type of inner join that behaves more like a filter than a join. The criteria in the `ON` clause allows us to filter the table on the left based on some criteria that involves the other table.\n\nLeft semi joins include additional criteria in the 'ON' clause\n- Join conditions and other criteria are specified in the `ON` clause\n- Fields listed in `SELECT` are limited to the left-side table\n- Only **unique** records that match the criteria are returned \n\nIt is an alternative to using a subquery (this one will produce the same result)\n\n    SELECT c.cust_id FROM customers c\n        WHERE c.cust_id IN\n        (SELECT cust_id FROM orders WHERE total > 1500); \n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:32+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Left Semi-Joins</strong></h4>\n<p>The <code>LEFT SEMI JOIN</code> is a special (and efficient) type of inner join that behaves more like a filter than a join. The criteria in the <code>ON</code> clause allows us to filter the table on the left based on some criteria that involves the other table.</p>\n<p>Left semi joins include additional criteria in the 'ON' clause</p>\n<ul>\n<li>Join conditions and other criteria are specified in the <code>ON</code> clause</li>\n<li>Fields listed in <code>SELECT</code> are limited to the left-side table</li>\n<li>Only <strong>unique</strong> records that match the criteria are returned</li>\n</ul>\n<p>It is an alternative to using a subquery (this one will produce the same result)</p>\n<pre><code>SELECT c.cust_id FROM customers c\n    WHERE c.cust_id IN\n    (SELECT cust_id FROM orders WHERE total &gt; 1500);\n</code></pre>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-1123996019",
+      "id": "20180417-151716_716099651",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:32+0000",
+      "dateFinished": "2021-06-01T20:59:32+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21368"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT c.cust_id\n    FROM customers c\n        LEFT SEMI JOIN orders o \n            ON (c.cust_id = o.cust_id AND o.total > 1500);",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:04:10+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 112,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "cust_id": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "cust_id\na\nc\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-1474625614",
+      "id": "20180417-003829_1851218400",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:32+0000",
+      "dateFinished": "2021-06-01T20:59:33+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21369"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:34+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-2018852382",
+      "id": "20180417-160318_401775302",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21370"
+    },
+    {
+      "text": "%md\n###**Built-In Functions**\n\nHive offers many built-in functions with some being the same as SQL. In Hive function names are not case-sensitive (unlike Pig). \n\nYou can see a list of all the functions and operators in Hive usring `SHOW FUNCTIONS;`\nand find out information about them using `DESCRIBE FUNCTION function_name;`\n\nYou can test a built-in function using a `SELECT` statement with no `FROM` clause",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:34+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 2,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h3><strong>Built-In Functions</strong></h3>\n<p>Hive offers many built-in functions with some being the same as SQL. In Hive function names are not case-sensitive (unlike Pig).</p>\n<p>You can see a list of all the functions and operators in Hive usring <code>SHOW FUNCTIONS;</code>\n<br  />and find out information about them using <code>DESCRIBE FUNCTION function_name;</code></p>\n<p>You can test a built-in function using a <code>SELECT</code> statement with no <code>FROM</code> clause</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-1325626374",
+      "id": "20180417-154652_259795081",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:34+0000",
+      "dateFinished": "2021-06-01T20:59:34+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21371"
+    },
+    {
+      "text": "%jdbc(hive)\n\nSHOW FUNCTIONS;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:34+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 2,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "tab_name": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 104,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "tab_name\n!\n!=\n$sum0\n%\n&\n*\n+\n-\n/\n<\n<=\n<=>\n<>\n=\n==\n>\n>=\n^\nabs\nacos\nadd_months\naes_decrypt\naes_encrypt\nand\narray\narray_contains\nascii\nasin\nassert_true\nassert_true_oom\natan\navg\nbase64\nbetween\nbin\nbloom_filter\nbround\nbucket_number\ncardinality_violation\ncase\ncbrt\nceil\nceiling\nchar_length\ncharacter_length\nchr\ncoalesce\ncollect_list\ncollect_set\ncompute_stats\nconcat\nconcat_ws\ncontext_ngrams\nconv\ncorr\ncos\ncount\ncovar_pop\ncovar_samp\ncrc32\ncreate_union\ncume_dist\ncurrent_authorizer\ncurrent_database\ncurrent_date\ncurrent_groups\ncurrent_timestamp\ncurrent_user\ndate_add\ndate_format\ndate_sub\ndatediff\nday\ndayofmonth\ndayofweek\ndecode\ndegrees\ndense_rank\ndiv\ne\nelt\nencode\nenforce_constraint\nexp\nexplode\nextract_union\nfactorial\nfield\nfind_in_set\nfirst_value\nfloor\nfloor_day\nfloor_hour\nfloor_minute\nfloor_month\nfloor_quarter\nfloor_second\nfloor_week\nfloor_year\nformat_number\nfrom_unixtime\nfrom_utc_timestamp\nget_json_object\nget_splits\ngreatest\ngrouping\nhash\nhex\nhistogram_numeric\nhour\nif\nin\nin_bloom_filter\nin_file\nindex\ninitcap\ninline\ninstr\ninternal_interval\nisfalse\nisnotfalse\nisnotnull\nisnottrue\nisnull\nistrue\njava_method\njson_tuple\nlag\nlast_day\nlast_value\nlcase\nlead\nleast\nlength\nlevenshtein\nlike\nlikeall\nlikeany\nln\nlocate\nlog\nlog10\nlog2\nlogged_in_user\nlower\nlpad\nltrim\nmap\nmap_keys\nmap_values\nmask\nmask_first_n\nmask_hash\nmask_last_n\nmask_show_first_n\nmask_show_last_n\nmatchpath\nmax\nmd5\nmin\nminute\nmod\nmonth\nmonths_between\nmurmur_hash\nnamed_struct\nnegative\nnext_day\nngrams\nnoop\nnoopstreaming\nnoopwithmap\nnoopwithmapstreaming\nnot\nntile\nnullif\nnvl\noctet_length\nor\nparse_url\nparse_url_tuple\npercent_rank\npercentile\npercentile_approx\npi\npmod\nposexplode\npositive\npow\npower\nprintf\nquarter\nradians\nrand\nrank\nreflect\nreflect2\nregexp\nregexp_extract\nregexp_replace\nregr_avgx\nregr_avgy\nregr_count\nregr_intercept\nregr_r2\nregr_slope\nregr_sxx\nregr_sxy\nregr_syy\nrepeat\nreplace\nreplicate_rows\nrestrict_information_schema\nreverse\nrlike\nround\nrow_number\nrpad\nrtrim\nsecond\nsentences\nsha\nsha1\nsha2\nshiftleft\nshiftright\nshiftrightunsigned\nsign\nsin\nsize\nsort_array\nsort_array_by\nsoundex\nspace\nsplit\nsq_count_check\nsqrt\nstack\nstd\nstddev\nstddev_pop\nstddev_samp\nstr_to_map\nstruct\nsubstr\nsubstring\nsubstring_index\nsum\ntan\nto_date\nto_epoch_milli\nto_unix_timestamp\nto_utc_timestamp\ntranslate\ntrim\ntrunc\nucase\nudftoboolean\nudftobyte\nudftodouble\nudftofloat\nudftointeger\nudftolong\nudftoshort\nudftostring\nunbase64\nunhex\nunix_timestamp\nupper\nuuid\nvar_pop\nvar_samp\nvariance\nversion\nweekofyear\nwhen\nwidth_bucket\nwindowingtablefunction\nxpath\nxpath_boolean\nxpath_double\nxpath_float\nxpath_int\nxpath_long\nxpath_number\nxpath_short\nxpath_string\nyear\n|\n~\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_1668139206",
+      "id": "20180417-160221_1686689210",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:34+0000",
+      "dateFinished": "2021-06-01T20:59:34+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21372"
+    },
+    {
+      "text": "%jdbc(hive)\nDESCRIBE FUNCTION upper;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:04:30+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 2,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 198,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "tab_name": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 104,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "tab_name\nupper(str) - Returns str with all characters changed to uppercase\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_1584076551",
+      "id": "20180417-160353_388174708",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:34+0000",
+      "dateFinished": "2021-06-01T20:59:34+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21373"
+    },
+    {
+      "text": "%jdbc(hive)\nSELECT abs(-414.3);\nSELECT upper('New York');\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:34+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 2,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 84,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 88,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "_c0\n414.3\n"
+          },
+          {
+            "type": "TABLE",
+            "data": "_c0\nNEW YORK\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-2026443811",
+      "id": "20180417-160818_676508127",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:34+0000",
+      "dateFinished": "2021-06-01T20:59:35+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21374"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:35+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-424483030",
+      "id": "20180417-161113_474295961",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21375"
+    },
+    {
+      "text": "%md\n####**Built-In Mathematical Functions**\n\n![numeric](https://cis442f-open-data.s3.amazonaws.com/pictures/hnumeric.png \"numeric\")",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:35+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Built-In Mathematical Functions</strong></h4>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hnumeric.png\" alt=\"numeric\" title=\"numeric\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-1106777260",
+      "id": "20180417-124555_114140983",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:35+0000",
+      "dateFinished": "2021-06-01T20:59:35+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21376"
+    },
+    {
+      "text": "%md\n####**Built-In Data and Time Functions**\n\nThese functions work with `TIMESTAMP` values\n![Timestamp](https://cis442f-open-data.s3.amazonaws.com/pictures/htimestamp.png \"Timestamp\")\n\nHive's default date and time string format is `yyyy-MM-dd HH:mm:ss`\nDates and times are rendered as strings in this format\n\nYou can convert to/from different formats. The `unix_timestamp` and `from_unixtime` functions accept a format parameter. See how the following two examples are built up.\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:35+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Built-In Data and Time Functions</strong></h4>\n<p>These functions work with <code>TIMESTAMP</code> values\n<br  /><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/htimestamp.png\" alt=\"Timestamp\" title=\"Timestamp\" /></p>\n<p>Hive's default date and time string format is <code>yyyy-MM-dd HH:mm:ss</code>\n<br  />Dates and times are rendered as strings in this format</p>\n<p>You can convert to/from different formats. The <code>unix_timestamp</code> and <code>from_unixtime</code> functions accept a format parameter. See how the following two examples are built up.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-835245074",
+      "id": "20180417-125724_1647462762",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:35+0000",
+      "dateFinished": "2021-06-01T20:59:35+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21377"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:35+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-1896914108",
+      "id": "20180417-182337_316959777",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21378"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Three steps to get date and time in particular format\n-- 1. Get current time\n-- 2. Convert it to unix time\n-- 3. Convert from unix time to desired format \n-- Can you see how we used the third expression to change the formatting of date time string?\nSELECT current_timestamp();\nSELECT unix_timestamp (current_timestamp());\nSELECT from_unixtime( unix_timestamp (current_timestamp()), 'MMM d, yyyy HH:mm');\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:35+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 98,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 88,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "2": {
+            "graph": {
+              "mode": "table",
+              "height": 88,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "_c0\n2021-06-01 20:59:35.727\n"
+          },
+          {
+            "type": "TABLE",
+            "data": "_c0\n1622581176\n"
+          },
+          {
+            "type": "TABLE",
+            "data": "_c0\nJun 1, 2021 20:59\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-1474079128",
+      "id": "20180417-125648_577045715",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:35+0000",
+      "dateFinished": "2021-06-01T20:59:36+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21379"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Three steps to convert date in different format\n-- 1. Convert the date in text format to unix time\n-- 2. Convert unix time to Hive format\n-- 3. Use to_date function to just extract the date\n\nSELECT unix_timestamp ('03/28/2020' , 'MM/dd/yyyy');\n\nSELECT from_unixtime (unix_timestamp ('03/28/2020' , 'MM/dd/yyyy'));\n\nSELECT to_date(from_unixtime (unix_timestamp ('03/28/2020' , 'MM/dd/yyyy')));",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:36+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 84,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 84,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          },
+          "2": {
+            "graph": {
+              "mode": "table",
+              "height": 84,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "_c0\n1585353600\n"
+          },
+          {
+            "type": "TABLE",
+            "data": "_c0\n2020-03-28 00:00:00\n"
+          },
+          {
+            "type": "TABLE",
+            "data": "_c0\n2020-03-28\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-2121827196",
+      "id": "20180417-181409_81067173",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:36+0000",
+      "dateFinished": "2021-06-01T20:59:37+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21380"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:37+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_1047056978",
+      "id": "20180417-182847_1247546705",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21381"
+    },
+    {
+      "text": "%md\n### Built-In String Functions\n![StringFn](https://cis442f-open-data.s3.amazonaws.com/pictures/hstringfn.png \"StringFn\")\n\nThe `substring` parameters in the example indicate taking 4 characters starting at the 3rd character (1 is the index of the first character)  ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:37+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h3>Built-In String Functions</h3>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hstringfn.png\" alt=\"StringFn\" title=\"StringFn\" /></p>\n<p>The <code>substring</code> parameters in the example indicate taking 4 characters starting at the 3rd character (1 is the index of the first character)</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959130_-2034795214",
+      "id": "20180417-125729_967506362",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:37+0000",
+      "dateFinished": "2021-06-01T20:59:37+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21382"
+    },
+    {
+      "text": "%md\n`concat` combines strings. The `concat_ws` variant combines them with a separator provided as the first parameter\n![concat](https://cis442f-open-data.s3.amazonaws.com/pictures/hconcat.png \"concat\")\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><code>concat</code> combines strings. The <code>concat_ws</code> variant combines them with a separator provided as the first parameter\n<br  /><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hconcat.png\" alt=\"concat\" title=\"concat\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-391745660",
+      "id": "20180417-125733_2097170398",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:38+0000",
+      "dateFinished": "2021-06-01T20:59:38+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21383"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "tableHide": true,
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Parsing URLs</strong></h4>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-1395667018",
+      "id": "20180417-183841_20710103",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21384"
+    },
+    {
+      "text": "%md\n####**Parsing URLs**\nThe `parse_url` function parses web addresses (URLs). The following examples assume this URL as input `http://www.example.com/click.php?A=42&Z=105#r1`\n\n\n![hurl](https://cis442f-open-data.s3.amazonaws.com/pictures/hurl.png \"hurl\")",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Parsing URLs</strong></h4>\n<p>The <code>parse_url</code> function parses web addresses (URLs). The following examples assume this URL as input <code>http://www.example.com/click.php?A=42&amp;Z=105#r1</code></p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hurl.png\" alt=\"hurl\" title=\"hurl\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-90707053",
+      "id": "20180417-125736_226075508",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:38+0000",
+      "dateFinished": "2021-06-01T20:59:38+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21385"
+    },
+    {
+      "text": "%jdbc(hive)\n-- For example\nSELECT (parse_url('http://www.example.com/click.php?A=42&Z=105#r1', 'PROTOCOL'));\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:04:54+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 176,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "_c0": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "_c0\nhttp\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_1889334803",
+      "id": "20180417-125648_1831386116",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:38+0000",
+      "dateFinished": "2021-06-01T20:59:38+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21386"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_1356268403",
+      "id": "20180417-125738_879694562",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21387"
+    },
+    {
+      "text": "%md\n####**Some other built-in functions**\n![OtherFn](https://cis442f-open-data.s3.amazonaws.com/pictures/hotherfn.png \"OtherFN\")",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Some other built-in functions</strong></h4>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hotherfn.png\" alt=\"OtherFn\" title=\"OtherFN\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-1128179019",
+      "id": "20180417-125745_1553454031",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:38+0000",
+      "dateFinished": "2021-06-01T20:59:38+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21388"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_1677370328",
+      "id": "20180417-201940_1050652965",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21389"
+    },
+    {
+      "text": "%md\n####**Aggregation**\n\n![Group](https://cis442f-open-data.s3.amazonaws.com/pictures/hgroup.png \"Group\")\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:38+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Aggregation</strong></h4>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hgroup.png\" alt=\"Group\" title=\"Group\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-163457323",
+      "id": "20180417-201430_525986604",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:38+0000",
+      "dateFinished": "2021-06-01T20:59:38+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21390"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE examples;\nSELECT brand, COUNT(prod_id) AS num\n    FROM products\n    GROUP BY brand;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:39+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 2,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 144,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "brand": "string",
+                      "num": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "brand\tnum\nDualcore\t3\nGigabux\t4\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-402721823",
+      "id": "20180417-125648_266284416",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:39+0000",
+      "dateFinished": "2021-06-01T20:59:40+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21391"
+    },
+    {
+      "text": "%md\nHive offers many aggregation functions, including these ones\n\n![Aggregation](https://cis442f-open-data.s3.amazonaws.com/pictures/haggregate.png \"Aggregation\")\n\nIt is also possible to define custom User Defined Aggregation Functions (UDAFs)\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:40+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p>Hive offers many aggregation functions, including these ones</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/haggregate.png\" alt=\"Aggregation\" title=\"Aggregation\" /></p>\n<p>It is also possible to define custom User Defined Aggregation Functions (UDAFs)</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_23077022",
+      "id": "20180417-201727_1724712096",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:40+0000",
+      "dateFinished": "2021-06-01T20:59:40+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21392"
+    },
+    {
+      "text": "%md\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:05:29+0000",
+      "config": {
+        "colWidth": 12,
+        "fontSize": 9,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/text"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622581529622_355722613",
+      "id": "paragraph_1622581529622_355722613",
+      "dateCreated": "2021-06-01T21:05:29+0000",
+      "status": "READY",
+      "focus": true,
+      "$$hashKey": "object:40258"
+    },
+    {
+      "text": "%md ## **Complex Data Types**\n\nHive has support for complex data types that allow us to represent multiple values in a single row/column position. A departure from the the normalized ways of managing data in relational database management systems. Hive supports the following three complex data types:\n\n![Complex](https://cis442f-open-data.s3.amazonaws.com/pictures/hcomplex.png \"Complex\")\n\nDoing so can be more efficient\n- Related data is stored together (good for 1:M relationships)\n- Avoids expensive join queries (ie. data is NOT normalized for performance reasons)\n\nCan be more flexible (store arbitrary amount of data in a single row)\n\nSometimes the underlying data is already stored this way\n- Other tools and languages represent data in nested structures (e.g. JSON)\n- Avoids need to transform data (flatten) nested structures\n\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:06:27+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h2><strong>Complex Data Types</strong></h2>\n<p>Hive has support for complex data types that allow us to represent multiple values in a single row/column position. A departure from the the normalized ways of managing data in relational database management systems. Hive supports the following three complex data types:</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hcomplex.png\" alt=\"Complex\" title=\"Complex\" /></p>\n<p>Doing so can be more efficient</p>\n<ul>\n<li>Related data is stored together (good for 1:M relationships)</li>\n<li>Avoids expensive join queries (ie. data is NOT normalized for performance reasons)</li>\n</ul>\n<p>Can be more flexible (store arbitrary amount of data in a single row)</p>\n<p>Sometimes the underlying data is already stored this way</p>\n<ul>\n<li>Other tools and languages represent data in nested structures (e.g. JSON)</li>\n<li>Avoids need to transform data (flatten) nested structures</li>\n</ul>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_1202983698",
+      "id": "20180417-125749_401986192",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T21:06:18+0000",
+      "dateFinished": "2021-06-01T21:06:18+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21393"
+    },
+    {
+      "text": "%md\nThe traditional way of storing multiple phone numbers for customers would be join two tables with a common key\n\n![phone](https://cis442f-open-data.s3.amazonaws.com/pictures/hphone.png \"phone\")\n\n**IMPORTANT** In these examples please use your own `stuXXXX` identity to create your own database and `EXTERNAL` tables. You will need to edit the code to do this. ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:40+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p>The traditional way of storing multiple phone numbers for customers would be join two tables with a common key</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hphone.png\" alt=\"phone\" title=\"phone\" /></p>\n<p><strong>IMPORTANT</strong> In these examples please use your own <code>stuXXXX</code> identity to create your own database and <code>EXTERNAL</code> tables. You will need to edit the code to do this.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_417146164",
+      "id": "20180417-125751_157608769",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:40+0000",
+      "dateFinished": "2021-06-01T20:59:40+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21394"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:40+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-540787914",
+      "id": "20180417-233132_1990822955",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21395"
+    },
+    {
+      "text": "%md\n\n####ARRAY\n\nThe `ARRAY` complex data type allows us to store all the phone numbers in one table\n\n![Array](https://cis442f-open-data.s3.amazonaws.com/pictures/harray.png \"Array\")\n\nNote\n- All elements in an ARRAY column have the same data type\n- The default delimiter is control-B. However, a different one can be specified as in this example\n- The syntax used to specify an ARRAY is illustrated in the following example",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:40+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4>ARRAY</h4>\n<p>The <code>ARRAY</code> complex data type allows us to store all the phone numbers in one table</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/harray.png\" alt=\"Array\" title=\"Array\" /></p>\n<p>Note</p>\n<ul>\n<li>All elements in an ARRAY column have the same data type</li>\n<li>The default delimiter is control-B. However, a different one can be specified as in this example</li>\n<li>The syntax used to specify an ARRAY is illustrated in the following example</li>\n</ul>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-1744330331",
+      "id": "20180417-125754_2103604472",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:40+0000",
+      "dateFinished": "2021-06-01T20:59:40+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21396"
+    },
+    {
+      "text": "%jdbc(hive)\n--\n-- In these examples used your own stuXXX identity \n-- to make your own database and EXTERNAL tables\n--\nCREATE DATABASE IF NOT EXISTS stu099\nLOCATION '/user/stu099/stu099.db';\n\nDROP TABLE IF EXISTS stu099.customers_phones;\nCREATE EXTERNAL TABLE IF NOT EXISTS stu099.customers_phones (\n    cust_id STRING,\n    name STRING,\n    phones ARRAY <STRING>)\n    ROW FORMAT DELIMITED \n    FIELDS TERMINATED BY ','\n    COLLECTION ITEMS TERMINATED BY '|'\n    LOCATION '/cis442f-data/input/examples8/customers_phones_array';",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:07:08+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 92.6667,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_1152236959",
+      "id": "20190416-180248_1442634090",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:41+0000",
+      "dateFinished": "2021-06-01T20:59:41+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21397"
+    },
+    {
+      "text": "%jdbc(hive)\n-- We can ARRAY elements using zero based indexing\nUSE stu099;\nSELECT name, phones[0] AS first_phone, phones[1] AS second_phone \nFROM customers_phones;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:41+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 162,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "name": "string",
+                      "first_phone": "string",
+                      "second_phone": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "name\tfirst_phone\tsecond_phone\nAlice\t555-1111\t555-2222\nBob\t555-4444\tnull\nCarlos\t555-5555\t555-6666\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_397556727",
+      "id": "20180418-000202_1993820408",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:41+0000",
+      "dateFinished": "2021-06-01T20:59:41+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21398"
+    },
+    {
+      "text": "%jdbc(hive)\n-- We can include ARRAYS in SELECT queries\nUSE stu099;\nSELECT cust_id AS ID, name AS fname, phones AS phones FROM customers_phones;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:41+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 176,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "id": "string",
+                      "fname": "string",
+                      "phones": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "id\tfname\tphones\na\tAlice\t[\"555-1111\",\"555-2222\",\"555-3333\"]\nb\tBob\t[\"555-4444\"]\nc\tCarlos\t[\"555-5555\",\"555-6666\"]\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_2062684442",
+      "id": "20180418-140503_734885493",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:41+0000",
+      "dateFinished": "2021-06-01T20:59:41+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21399"
+    },
+    {
+      "text": "%sh\n# Show the contents of the data file\nhdfs dfs -cat /cis442f-data/input/examples8/customers_phones_array/customers_phones_array.csv",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:41+0000",
+      "config": {
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/sh",
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 135.99,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "a,Alice,555-1111|555-2222|555-3333\nb,Bob,555-4444\nc,Carlos,555-5555|555-6666"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959131_-185729946",
+      "id": "20180417-235935_351827589",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:41+0000",
+      "dateFinished": "2021-06-01T20:59:43+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21400"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:43+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_810607125",
+      "id": "20180418-143051_29748060",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21401"
+    },
+    {
+      "text": "%md\nThe `explode` function creates a record for each element in an `ARRAY`. This is an example of a _table-generating_ function\n![Explode](https://cis442f-open-data.s3.amazonaws.com/pictures/hexplode.png \"Explode\")\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:43+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p>The <code>explode</code> function creates a record for each element in an <code>ARRAY</code>. This is an example of a <em>table-generating</em> function\n<br  /><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hexplode.png\" alt=\"Explode\" title=\"Explode\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_948100233",
+      "id": "20180417-130640_222888779",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:43+0000",
+      "dateFinished": "2021-06-01T20:59:43+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21402"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Explode all the phone numbers\nUSE stu099;\nSELECT explode(phones) AS phone \n    FROM customers_phones;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 231.997,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "phone": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "phone\n555-1111\n555-2222\n555-3333\n555-4444\n555-5555\n555-6666\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_803818219",
+      "id": "20180418-143122_1124874631",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:44+0000",
+      "dateFinished": "2021-06-01T20:59:44+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21403"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_-128084988",
+      "id": "20180418-144215_83473204",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21404"
+    },
+    {
+      "text": "%md\nNo other columns can be included in the SELECT line with `explode`\n\nWe can use a `LATERAL VIEW` to overcome this limitation\n- It applies the table-generating function to each ARRAY in the base table\n- Joins the resulting output with the rows of the base table\n\n![Lateral](https://cis442f-open-data.s3.amazonaws.com/pictures/hlateral.png \"Lateral\")",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p>No other columns can be included in the SELECT line with <code>explode</code></p>\n<p>We can use a <code>LATERAL VIEW</code> to overcome this limitation</p>\n<ul>\n<li>It applies the table-generating function to each ARRAY in the base table</li>\n<li>Joins the resulting output with the rows of the base table</li>\n</ul>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hlateral.png\" alt=\"Lateral\" title=\"Lateral\" /></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_111210358",
+      "id": "20180418-144109_717111855",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:44+0000",
+      "dateFinished": "2021-06-01T20:59:44+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21405"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Explode all the phone numbers\nUSE stu099;\nSELECT name AS fname, phone\n    FROM customers_phones\n        LATERAL VIEW explode(phones) p AS phone;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 231.997,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "fname": "string",
+                      "phone": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "fname\tphone\nAlice\t555-1111\nAlice\t555-2222\nAlice\t555-3333\nBob\t555-4444\nCarlos\t555-5555\nCarlos\t555-6666\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_-1179297374",
+      "id": "20180418-143850_608274900",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:44+0000",
+      "dateFinished": "2021-06-01T20:59:44+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21406"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_1006726565",
+      "id": "20180418-002856_274595588",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21407"
+    },
+    {
+      "text": "%md\n### MAP\n\nThe `MAP` complex data type stores key-value pairs, much like a dictionary in Python.\n\n![Map](https://cis442f-open-data.s3.amazonaws.com/pictures/hmap.png \"Map\")\n\nNote\n- MAP keys must all be one data type, and values must all be one data type\n- The value could be another complex type like `ARRAY` or `STRUCT`\n- The default key-value separator is control-C. However, a different one can be specified as in this example\n- The key is stored in the data\n- The syntax used to specify a MAP is shown in the following example",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h3>MAP</h3>\n<p>The <code>MAP</code> complex data type stores key-value pairs, much like a dictionary in Python.</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hmap.png\" alt=\"Map\" title=\"Map\" /></p>\n<p>Note</p>\n<ul>\n<li>MAP keys must all be one data type, and values must all be one data type</li>\n<li>The value could be another complex type like <code>ARRAY</code> or <code>STRUCT</code></li>\n<li>The default key-value separator is control-C. However, a different one can be specified as in this example</li>\n<li>The key is stored in the data</li>\n<li>The syntax used to specify a MAP is shown in the following example</li>\n</ul>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_-1410077298",
+      "id": "20180417-233100_1023116450",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:44+0000",
+      "dateFinished": "2021-06-01T20:59:44+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21408"
+    },
+    {
+      "text": "%jdbc(hive)\n\nUSE stu099;\n\nDROP TABLE IF EXISTS stu099.customers_phones;\n\nCREATE EXTERNAL TABLE IF NOT EXISTS customers_phones (\n    cust_id STRING,\n    name STRING,\n    phones MAP <STRING, STRING>)\n    ROW FORMAT DELIMITED \n    FIELDS TERMINATED BY ','\n    COLLECTION ITEMS TERMINATED BY '|'\n    MAP KEYS TERMINATED BY ':'\n    LOCATION '/cis442f-data/input/examples8/customers_phones_map';\n    ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 152.674,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_-1765531698",
+      "id": "20180418-002218_129698034",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:44+0000",
+      "dateFinished": "2021-06-01T20:59:44+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21409"
+    },
+    {
+      "text": "%sh\n# Show the contents of the data file\n# Note that the keys are actually stored in the data\nhdfs dfs -cat /cis442f-data/input/examples8/customers_phones_map/customers_phones_map.csv",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:44+0000",
+      "config": {
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/sh",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "a,Alice,home:555-1111|work:555-2222|mobile:555-3333\nb,Bob,mobile:555-4444\nc,Carlos,work:555-5555|home:555-6666"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_1007133135",
+      "id": "20180418-002936_647105263",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:44+0000",
+      "dateFinished": "2021-06-01T20:59:46+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21410"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE stu099;\n\nSELECT name, phones['home'] AS home\nFROM customers_phones;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 144,
+              "optionOpen": false
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 234.028,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "name": "string",
+                      "home": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "name\thome\nAlice\t555-1111\nBob\tnull\nCarlos\t555-6666\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_-1384058448",
+      "id": "20180418-003216_2009869820",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:47+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21411"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE stu099;\nDESCRIBE FORMATTED customers_phones;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "col_name": "string",
+                      "data_type": "string",
+                      "comment": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "col_name\tdata_type\tcomment\n# col_name\tdata_type\tcomment\ncust_id\tstring\t\nname\tstring\t\nphones\tmap<string,string>\t\n\tnull\tnull\n# Detailed Table Information\tnull\tnull\nDatabase:           \tstu099              \tnull\nOwnerType:          \tUSER                \tnull\nOwner:              \tstu099              \tnull\nCreateTime:         \tTue Jun 01 20:59:44 UTC 2021\tnull\nLastAccessTime:     \tUNKNOWN             \tnull\nRetention:          \t0                   \tnull\nLocation:           \thdfs://ip-172-31-46-204.ec2.internal:8020/cis442f-data/input/examples8/customers_phones_map\tnull\nTable Type:         \tEXTERNAL_TABLE      \tnull\nTable Parameters:\tnull\tnull\n\tEXTERNAL            \tTRUE                \n\tbucketing_version   \t2                   \n\tnumFiles            \t1                   \n\ttotalSize           \t110                 \n\ttransient_lastDdlTime\t1622581184          \n\tnull\tnull\n# Storage Information\tnull\tnull\nSerDe Library:      \torg.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe\tnull\nInputFormat:        \torg.apache.hadoop.mapred.TextInputFormat\tnull\nOutputFormat:       \torg.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat\tnull\nCompressed:         \tNo                  \tnull\nNum Buckets:        \t-1                  \tnull\nBucket Columns:     \t[]                  \tnull\nSort Columns:       \t[]                  \tnull\nStorage Desc Params:\tnull\tnull\n\tcollection.delim    \t|                   \n\tfield.delim         \t,                   \n\tmapkey.delim        \t:                   \n\tserialization.format\t,                   \n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_637755212",
+      "id": "20190416-181707_1550642805",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:47+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21412"
+    },
+    {
+      "text": "%jdbc(hive)\nSELECT cust_id AS ID, name AS fname, phones FROM stu099.customers_phones;\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 252,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "id": "string",
+                      "fname": "string",
+                      "phones": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "id\tfname\tphones\na\tAlice\t{\"home\":\"555-1111\",\"work\":\"555-2222\",\"mobile\":\"555-3333\"}\nb\tBob\t{\"mobile\":\"555-4444\"}\nc\tCarlos\t{\"work\":\"555-5555\",\"home\":\"555-6666\"}\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_-874061141",
+      "id": "20180417-125650_1622591918",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:47+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21413"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_1018905457",
+      "id": "20180418-144444_1733698436",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21414"
+    },
+    {
+      "text": "%md\nThe `size` function returns the number of items in an `ARRRAY` or `MAP` (but not a `STRUT`)\n\n![Size](https://cis442f-open-data.s3.amazonaws.com/pictures/hsize.png \"Size\")\n\nThe example in this picture is for an `ARRAY` and the example in the following paragraph is for the `MAP` we just created",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p>The <code>size</code> function returns the number of items in an <code>ARRRAY</code> or <code>MAP</code> (but not a <code>STRUT</code>)</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hsize.png\" alt=\"Size\" title=\"Size\" /></p>\n<p>The example in this picture is for an <code>ARRAY</code> and the example in the following paragraph is for the <code>MAP</code> we just created</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_566441090",
+      "id": "20180417-130645_1041778318",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:47+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21415"
+    },
+    {
+      "text": "%jdbc(hive)\nSELECT name AS fname, size(phones) AS num \n    FROM customers_phones;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T21:07:51+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 198,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "fname": "string",
+                      "num": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "fname\tnum\nAlice\t3\nBob\t1\nCarlos\t2\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959132_151763650",
+      "id": "20180418-144458_279244147",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:47+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21416"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_774052949",
+      "id": "20180418-141002_851278947",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21417"
+    },
+    {
+      "text": "%md ####STRUCT\n\n\nThe `STRUCT` complex data type stores a fixed number of named fields. A 'STRUCT' is similar conceptually to a table row: it contains a fixed number of named fields, each with a predefined type. To combine two related tables, while using complex types to minimize repetition, the typical way to represent that data is as an ARRAY of STRUCT elements. (Source: Cloudera)\n\n![STRUCT](https://cis442f-open-data.s3.amazonaws.com/pictures/hstruct.png \"STRUCT\")\n\nBecause a STRUCT has a fixed number of named fields, it typically does not make sense to have a STRUCT as the type of a table column. In such a case, you could just make each field of the STRUCT into a separate column of the table. The STRUCT type is most useful as an item of an ARRAY or the value part of the key-value pair in a MAP. A nested type column with a STRUCT at the lowest level lets you associate a variable number of row-like objects with each row of the table. (Source: Cloudera)\n\nSee the following example for how to specify the names and types of the items in a `STRUCT`",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4>STRUCT</h4>\n<p>The <code>STRUCT</code> complex data type stores a fixed number of named fields. A 'STRUCT' is similar conceptually to a table row: it contains a fixed number of named fields, each with a predefined type. To combine two related tables, while using complex types to minimize repetition, the typical way to represent that data is as an ARRAY of STRUCT elements. (Source: Cloudera)</p>\n<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hstruct.png\" alt=\"STRUCT\" title=\"STRUCT\" /></p>\n<p>Because a STRUCT has a fixed number of named fields, it typically does not make sense to have a STRUCT as the type of a table column. In such a case, you could just make each field of the STRUCT into a separate column of the table. The STRUCT type is most useful as an item of an ARRAY or the value part of the key-value pair in a MAP. A nested type column with a STRUCT at the lowest level lets you associate a variable number of row-like objects with each row of the table. (Source: Cloudera)</p>\n<p>See the following example for how to specify the names and types of the items in a <code>STRUCT</code></p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_2057257992",
+      "id": "20180417-125806_2097279047",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:47+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21418"
+    },
+    {
+      "text": "%jdbc(hive)\n\nUSE stu099;\nDROP TABLE IF EXISTS customers_addr;\n\nCREATE EXTERNAL TABLE IF NOT EXISTS customers_addr (\n    cust_id STRING,\n    name STRING,\n    address STRUCT <street: STRING,\n                    city: STRING,\n                    state: STRING,\n                    zipcode: STRING>)\n    ROW FORMAT DELIMITED \n    FIELDS TERMINATED BY ','\n    COLLECTION ITEMS TERMINATED BY '|'\n    LOCATION '/cis442f-data/input/examples8/customers_addr';\n    ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:47+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_835008947",
+      "id": "20180418-135756_401340309",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:47+0000",
+      "dateFinished": "2021-06-01T20:59:48+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21419"
+    },
+    {
+      "text": "%sh\n# Show the contents of the data file\nhdfs dfs -cat /cis442f-data/input/examples8/customers_addr/customers_addr.csv",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:48+0000",
+      "config": {
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/sh",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "a,Alice,742 Evergreen Terrace|Springfield|OR|97477\nb,Bob,1600 Pennsylvania Ave NW|Washington|DC|20500\nc,Carlos,342 Gravelpit Terrace|Bedrock\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-32060271",
+      "id": "20180418-140322_2026886926",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:48+0000",
+      "dateFinished": "2021-06-01T20:59:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21420"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE stu099;\nSELECT cust_id AS ID, name AS fname, address AS address  FROM customers_addr; \n    ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 284.028,
+              "optionOpen": false
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 238.016,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "id": "string",
+                      "fname": "string",
+                      "address": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "id\tfname\taddress\na\tAlice\t{\"street\":\"742 Evergreen Terrace\",\"city\":\"Springfield\",\"state\":\"OR\",\"zipcode\":\"97477\"}\nb\tBob\t{\"street\":\"1600 Pennsylvania Ave NW\",\"city\":\"Washington\",\"state\":\"DC\",\"zipcode\":\"20500\"}\nc\tCarlos\t{\"street\":\"342 Gravelpit Terrace\",\"city\":\"Bedrock\",\"state\":null,\"zipcode\":null}\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_766906676",
+      "id": "20180418-141346_677903516",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:50+0000",
+      "dateFinished": "2021-06-01T20:59:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21421"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Show how to access elements of a STRUCT\nUSE stu099;\nSELECT cust_id AS ID, name AS fname, \n    address.city AS city, address.zipcode AS zip  \n    FROM customers_addr; \n    ",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 170.063,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "id": "string",
+                      "fname": "string",
+                      "city": "string",
+                      "zip": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          },
+          {
+            "type": "TABLE",
+            "data": "id\tfname\tcity\tzip\na\tAlice\tSpringfield\t97477\nb\tBob\tWashington\t20500\nc\tCarlos\tBedrock\tnull\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-1950943731",
+      "id": "20180418-142321_680445684",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:50+0000",
+      "dateFinished": "2021-06-01T20:59:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21422"
+    },
+    {
+      "text": "",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-133618606",
+      "id": "20180417-130623_1062065581",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21423"
+    },
+    {
+      "text": "%md\n![Hands-on](https://cis442f-open-data.s3.amazonaws.com/pictures/hands.png \"Hands-on\")\n#### **Challenge 1: Basic Relational Data Analysis**\n\nUse the `products`, `order_details`, and `orders` tables in the `simon` database to answer the questions in this challenge. \n\n**Question 1:** Calculating the Top N Products\nWhich three products have been sold more units than any other? What are the brands and names of the products? How many units have been sold?\n\nHint: Remember that if you use a GROUP BY clause, you must include all the GROUP BY fields in the SELECT clause (except those that are part of an aggregate function). If we don't we will probably get an error:\n    `SemanticException [Error 10025]:` \n    `Expression not in GROUP BY key 'fieldname'`",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><img src=\"https://cis442f-open-data.s3.amazonaws.com/pictures/hands.png\" alt=\"Hands-on\" title=\"Hands-on\" /></p>\n<h4><strong>Challenge 1: Basic Relational Data Analysis</strong></h4>\n<p>Use the <code>products</code>, <code>order_details</code>, and <code>orders</code> tables in the <code>simon</code> database to answer the questions in this challenge.</p>\n<p><strong>Question 1:</strong> Calculating the Top N Products\n<br  />Which three products have been sold more units than any other? What are the brands and names of the products? How many units have been sold?</p>\n<p>Hint: Remember that if you use a GROUP BY clause, you must include all the GROUP BY fields in the SELECT clause (except those that are part of an aggregate function). If we don't we will probably get an error:</p>\n<pre><code>`SemanticException [Error 10025]:` \n`Expression not in GROUP BY key 'fieldname'`\n</code></pre>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-641212559",
+      "id": "20180417-003829_2109303241",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:50+0000",
+      "dateFinished": "2021-06-01T20:59:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21424"
+    },
+    {
+      "text": "%jdbc(hive)\nUSE simon;\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 216,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "brand": "string",
+                      "name": "string",
+                      "sold": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-594441358",
+      "id": "20180417-220713_322439912",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:50+0000",
+      "dateFinished": "2021-06-01T20:59:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21425"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_1292701074",
+      "id": "20180418-145214_1283015786",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21426"
+    },
+    {
+      "text": "%md\n**Question 2:** Calculating the Order Total\nWhich ten orders had the highest total dollar amounts?\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:50+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><strong>Question 2:</strong> Calculating the Order Total\n<br  />Which ten orders had the highest total dollar amounts?</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-433640630",
+      "id": "20180417-223152_1430374016",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:50+0000",
+      "dateFinished": "2021-06-01T20:59:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21427"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Top Ten Orders\nUSE simon;\n\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 3,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 334.028,
+              "optionOpen": false
+            }
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "od.order_id": "string",
+                      "total": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-279815607",
+      "id": "20180417-223821_1193353391",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:51+0000",
+      "dateFinished": "2021-06-01T20:59:51+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21428"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-890776183",
+      "id": "20180418-145148_952951227",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21429"
+    },
+    {
+      "text": "%md\n**Question 3:** Calculating Revenue and Profit\nRun a query to show our revenue (total price of products sold) and profit (price minus cost) by date.\nHint: The order_date column in the orders table is of type TIMESTAMP. Use the function to_date to get just the date portion of the value.",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<p><strong>Question 3:</strong> Calculating Revenue and Profit\n<br  />Run a query to show our revenue (total price of products sold) and profit (price minus cost) by date.\n<br  />Hint: The order_date column in the orders table is of type TIMESTAMP. Use the function to_date to get just the date portion of the value.</p>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-2048521866",
+      "id": "20180417-223204_584686142",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:51+0000",
+      "dateFinished": "2021-06-01T20:59:51+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21430"
+    },
+    {
+      "text": "%jdbc(hive)\n-- Ranking Daily Profits\nUSE simon;",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 404.028,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "o_date": "string",
+                      "revenue": "string",
+                      "profit": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Query executed successfully. Affected rows : -1"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-263041785",
+      "id": "20180417-223834_784433709",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:51+0000",
+      "dateFinished": "2021-06-01T20:59:51+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21431"
+    },
+    {
+      "text": "%md\n#### **Challenge 2: Creating, Loading, and Querying Complex Data with Hive**\n\nOur company recently started a loyalty program to reward our best customers. A colleague has already provided us with a sample of the data that contains information about customers who have signed up for the program, including their phone numbers (as a MAP), a list of past order IDs (as an ARRAY), and a STRUCT that summarizes the minimum, maximum, average, and total value of past orders (in cents). You will use Hive to create the table, populate it with the provided data, and then run a few queries to practice referencing these types of fields. Finally, you will create a Parquet table containing the same data, to allow you to use Impala to query the data.\n\n1.\tCreate a text file-based table with the following characteristics:\nName: loyalty_program\nType: EXTERNAL\nColumns:\n\n    **Field Name\tField Type**\n    cust_id\tINT\n    fname\tSTRING\n    lname\tSTRING\n    email\tSTRING\n    level\tSTRING\n    phone\tMAP<STRING,STRING>\n    order_ids\tARRAY<INT>\n    order_value\tSTRUCT<min:INT, max:INT, avg:INT, total:INT>\n \n    Field Terminator: | (pipe)\n    Collection Item Terminator: , (comma)\n    Map Key Terminator: : (colon)\n    Location: /cis442f-data/input/examples8/loyalty_data \n\n2.\tCreate a Parquet-based table named loyalty_program_parquet with the same characteristics as the loyalty_program table, and use Hive to copy all the data from the loyalty_program table into this new loyalty_program_parquet table. (Hint: You can use CREATE TABLE AS SELECT (CTAS) to do this with a single HiveQL statement.) Store the parquet file in you own space on hdfs e.g. using the stuXXX database you created for the last class. \n\n3.\tExamine the data in loyalty_data.txt to see how it corresponds to the fields in the table.\n\n4.\tRun a query to select the HOME phone number for customer ID 1200866. (Hint: MAP keys are case-sensitive.) You should see 408-555-4914 as the result.\n\n5.\tSelect the third element from the order_ids ARRAY for customer ID 1200866. (Hint: elements are indexed from zero.) The query should return 5278505.\n\n6.\tSelect the total attribute from the order_value STRUCT for customer ID 1200866. The query should return 401874.\n\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 6,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "<h4><strong>Challenge 2: Creating, Loading, and Querying Complex Data with Hive</strong></h4>\n<p>Our company recently started a loyalty program to reward our best customers. A colleague has already provided us with a sample of the data that contains information about customers who have signed up for the program, including their phone numbers (as a MAP), a list of past order IDs (as an ARRAY), and a STRUCT that summarizes the minimum, maximum, average, and total value of past orders (in cents). You will use Hive to create the table, populate it with the provided data, and then run a few queries to practice referencing these types of fields. Finally, you will create a Parquet table containing the same data, to allow you to use Impala to query the data.</p>\n<ol>\n<li><p>Create a text file-based table with the following characteristics:\n<br  />Name: loyalty_program\n<br  />Type: EXTERNAL\n<br  />Columns:</p>\n<p><strong>Field Name    Field Type</strong>\n<br  />cust_id INT\n<br  />fname   STRING\n<br  />lname   STRING\n<br  />email   STRING\n<br  />level   STRING\n<br  />phone   MAP<STRING,STRING>\n<br  />order_ids   ARRAY<INT>\n<br  />order_value STRUCT<min:INT, max:INT, avg:INT, total:INT></p>\n<p>Field Terminator: | (pipe)\n<br  />Collection Item Terminator: , (comma)\n<br  />Map Key Terminator: : (colon)\n<br  />Location: /cis442f-data/input/examples8/loyalty_data</p>\n</li>\n<li><p>Create a Parquet-based table named loyalty_program_parquet with the same characteristics as the loyalty_program table, and use Hive to copy all the data from the loyalty_program table into this new loyalty_program_parquet table. (Hint: You can use CREATE TABLE AS SELECT (CTAS) to do this with a single HiveQL statement.) Store the parquet file in you own space on hdfs e.g. using the stuXXX database you created for the last class.</p>\n</li>\n<li><p>Examine the data in loyalty_data.txt to see how it corresponds to the fields in the table.</p>\n</li>\n<li><p>Run a query to select the HOME phone number for customer ID 1200866. (Hint: MAP keys are case-sensitive.) You should see 408-555-4914 as the result.</p>\n</li>\n<li><p>Select the third element from the order_ids ARRAY for customer ID 1200866. (Hint: elements are indexed from zero.) The query should return 5278505.</p>\n</li>\n<li><p>Select the total attribute from the order_value STRUCT for customer ID 1200866. The query should return 401874.</p>\n</li>\n</ol>\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959133_-907903971",
+      "id": "20180417-220600_1737929601",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:51+0000",
+      "dateFinished": "2021-06-01T20:59:51+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:21432"
+    },
+    {
+      "text": "%jdbc(hive)\n\nCREATE EXTERNAL TABLE IF NOT EXISTS stuXXX.loyalty_program\n    (cust_id ....  complete the rest\n\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:59:51+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959134_1485672549",
+      "id": "20180417-220903_821717844",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "dateStarted": "2021-06-01T20:59:51+0000",
+      "dateFinished": "2021-06-01T20:59:51+0000",
+      "status": "ERROR",
+      "$$hashKey": "object:21433"
+    },
+    {
+      "text": "%jdbc(hive)\n\nUSE stuXXX;\n\nCREATE TABLE loyalty_program_parquet .... complete the rest\n",
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:55:59+0000",
+      "config": {
+        "hive": "hive",
+        "editorSetting": {
+          "language": "text",
+          "editOnDblClick": false
+        },
+        "colWidth": 4,
+        "editorMode": "ace/mode/text",
+        "editorHide": false,
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959134_1568220834",
+      "id": "20180418-151545_1616645508",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "READY",
+      "$$hashKey": "object:21434"
+    },
+    {
+      "user": "stu099",
+      "dateUpdated": "2021-06-01T20:55:59+0000",
+      "config": {
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/scala",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1622580959134_1343928557",
+      "id": "20190416-210137_889345110",
+      "dateCreated": "2021-06-01T20:55:59+0000",
+      "status": "READY",
+      "$$hashKey": "object:21435"
+    }
+  ],
+  "name": "Relational Data Analysis and Complex Data in Hive",
+  "id": "2G6XVEKHF",
+  "defaultInterpreterGroup": "spark",
+  "version": "0.9.0-preview1",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {
+    "isRunning": false
+  },
+  "path": "/stu099/Relational Data Analysis and Complex Data in Hive"
+}
